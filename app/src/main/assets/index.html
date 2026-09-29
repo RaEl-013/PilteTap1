@@ -80,7 +80,8 @@ select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--lin
         <label for="nt" class="msg" style="margin:0">Yüklənən şəkillər:</label>
         <select id="nt"><option value="kafel">Kafel</option><option value="metlax">Metlax</option></select>
       </div>
-      <label class="btn">Şəkilləri əlavə et<input type="file" id="add" accept="image/jpeg,.jpg,.jpeg" multiple></label>
+      <button class="btn" id="ccamb" style="margin-top:0">Kamera ilə çək</button>
+      <label class="btn alt">Şəkilləri əlavə et<input type="file" id="add" accept="image/jpeg,.jpg,.jpeg" multiple></label>
       <p class="msg" id="ast">JPEG (.jpg) fayllarını birlikdə seçə bilərsən. Model adı fayl adından götürülür. Şəkillər yalnız bu cihazda saxlanılır.</p>
     </div>
     <div class="panel">
@@ -95,6 +96,7 @@ select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--lin
       </div>
       <div class="row" style="margin-top:10px">
         <button class="btn alt" id="csel" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem">Görünənləri seç</button>
+        <button class="btn alt" id="cnsel" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem" disabled>İmtina et</button>
         <button class="btn alt" id="dsel" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem;color:#c0392b;border-color:#c0392b" disabled>Seçilmişləri sil (0)</button>
         <button class="btn alt" id="dall" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem;color:#c0392b;border-color:#c0392b">Hamısını sil</button>
       </div>
@@ -103,6 +105,16 @@ select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--lin
     <div class="grid" id="list"></div>
   </section>
 </main>
+<div id="cc" hidden style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:8;display:flex;align-items:center;justify-content:center;padding:16px">
+  <div class="panel" style="max-width:380px;width:100%;margin:0">
+    <div class="q"><img id="cci" alt="" style="width:96px;height:96px"><div style="flex:1"><p class="msg" style="margin:0">Yeni model — kataloqa əlavə et</p></div></div>
+    <p class="msg" style="margin:12px 0 4px">Model adı</p>
+    <input id="ccn" type="text" placeholder="Məs: K-101" style="width:100%;font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink)">
+    <div class="row" style="margin:10px 0"><span class="msg" style="margin:0">Növ:</span><select id="cct"><option value="kafel">Kafel</option><option value="metlax">Metlax</option></select></div>
+    <p class="msg" id="ccm"></p>
+    <div class="row"><button class="btn" id="ccs" style="flex:1;width:auto">Kataloqa əlavə et</button><button class="btn alt" id="ccx" style="width:auto;margin:0">Ləğv et</button></div>
+  </div>
+</div>
 <div id="ed" hidden style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:8;display:flex;align-items:center;justify-content:center;padding:16px">
   <div class="panel" style="max-width:420px;width:100%;max-height:92vh;overflow:auto;margin:0">
     <div class="q"><img id="ei" alt="" style="width:110px;height:110px"><div style="flex:1"><label class="btn alt" style="margin:0;padding:10px;font-size:.95rem">Şəkli dəyiş<input type="file" id="ef" accept="image/jpeg,.jpg,.jpeg"></label><div class="msg" id="em"></div></div></div>
@@ -251,6 +263,19 @@ async function tune(){
   finally{btn.disabled=false}
 }
 $('tune').onclick=tune;
+$('ccx').onclick=()=>{$('cc').hidden=true;pendingCatalogImg=null};
+$('ccs').onclick=async()=>{
+  const name=$('ccn').value.trim();
+  if(!name){$('ccm').textContent='Model adı boş ola bilməz.';return}
+  if(!pendingCatalogImg)return;
+  const btn=$('ccs');btn.disabled=true;$('ccm').textContent='Şəkil işlənir...';
+  try{
+    const type=$('cct').value,c=pendingCatalogImg;
+    await put({name,type,thumb:c.toDataURL('image/jpeg',.8),f:feat(c,0),v2:await itemEmbs(c)});
+    pendingCatalogImg=null;$('cc').hidden=true;render();
+  }catch(e){$('ccm').textContent='Xəta: '+e.message}
+  finally{btn.disabled=false}
+};
 /* ---------- image features ---------- */
 function load(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),i=new Image();i.onload=()=>{URL.revokeObjectURL(u);res(i)};i.onerror=()=>rej(new Error('Şəkil açılmadı'));i.src=u})}
 function squareCanvas(img,size){const c=document.createElement('canvas');c.width=c.height=size;const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height,m=Math.min(w,h);c.getContext('2d').drawImage(img,(w-m)/2,(h-m)/2,m,m,0,0,size,size);return c}
@@ -325,7 +350,7 @@ $('t1').onclick=()=>tab(1);$('t2').onclick=()=>tab(2);
 
 let sel=new Set(),visible=[],cur=null,newImg=null;
 function ask(m){return new Promise(r=>{$('am').textContent=m;$('ask').hidden=false;const f=v=>{$('ask').hidden=true;$('ay').onclick=$('an').onclick=null;r(v)};$('ay').onclick=()=>f(true);$('an').onclick=()=>f(false)})}
-function upBulk(){$('dsel').textContent='Seçilmişləri sil ('+sel.size+')';$('dsel').disabled=!sel.size}
+function upBulk(){$('dsel').textContent='Seçilmişləri sil ('+sel.size+')';$('dsel').disabled=!sel.size;$('cnsel').disabled=!sel.size}
 function edit(it){cur=it;newImg=null;$('ei').src=it.thumb;$('en').value=it.name;$('et').value=it.type;$('eall').checked=false;$('em').textContent='';$('ed').hidden=false}
 async function render(){
   const all_=await all();$('cnt').textContent=all_.length?'('+all_.length+')':'';
@@ -347,6 +372,7 @@ async function render(){
 }
 $('cq').oninput=render;$('cf').onchange=render;
 $('csel').onclick=()=>{const allSel=visible.length&&visible.every(i=>sel.has(i.id));visible.forEach(i=>allSel?sel.delete(i.id):sel.add(i.id));render()};
+$('cnsel').onclick=()=>{sel.clear();render()};
 $('dsel').onclick=async()=>{if(!sel.size)return;if(!await ask(sel.size+' şəkil silinsin?'))return;for(const id of [...sel])await del(id);sel.clear();render()};
 $('dall').onclick=async()=>{const a=await all();if(!a.length)return;if(!await ask('Bütün kataloq ('+a.length+' şəkil) silinsin? Bu geri qaytarılmır.'))return;for(const x of a)await del(x.id);sel.clear();render()};
 $('ecl').onclick=()=>{$('ed').hidden=true};
@@ -436,7 +462,7 @@ async function search(file){
 $('pick').onchange=e=>{search(e.target.files[0]);e.target.value=''};
 let stream=null,anT=null,hist=[],anC=null,liveTick=0,liveBusy=false;
 $('zm').oninput=()=>{const z=parseFloat($('zm').value)||1;$('zmv').textContent=z.toFixed(1)+'x';$('cv').style.transform='scale('+z+')'};
-async function openCam(){$('cm').hidden=false;$('ce').textContent='';$('lv').hidden=true;$('zm').value=1;$('zmv').textContent='1.0x';$('cv').style.transform='scale(1)';try{stream=await navigator.mediaDevices.getUserMedia({video:true});$('cv').srcObject=stream;hist=[];liveTick=0;clearInterval(anT);anT=setInterval(analyze,400)}catch(e){$('ce').textContent='Kamera açılmadı. Kameranın qoşulduğunu və icazə verildiyini yoxla.'}}
+async function openCam(){$('cm').hidden=false;$('ce').textContent='';$('lv').hidden=true;$('zm').value=1;$('zmv').textContent='1.0x';$('cv').style.transform='scale(1)';lastQ=null;pendingCatalogImg=null;try{stream=await navigator.mediaDevices.getUserMedia({video:true});$('cv').srcObject=stream;hist=[];liveTick=0;clearInterval(anT);anT=setInterval(analyze,400)}catch(e){$('ce').textContent='Kamera açılmadı. Kameranın qoşulduğunu və icazə verildiyini yoxla.'}}
 function closeCam(){clearInterval(anT);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('cm').hidden=true;$('lv').hidden=true}
 function analyzePixels(d,S){
   const n=S*S,L=new Float32Array(n),q=[0,0,0,0],qn=[0,0,0,0],rr=[0,0,0],cr=[0,0,0];
@@ -508,8 +534,25 @@ async function liveMatch(v,s){
 }
 function placeFrame(){const v=$('cv'),s=Math.round(Math.min(v.clientWidth,v.clientHeight)*.9);if(s>0)$('fr').style.width=$('fr').style.height=s+'px'}
 $('cv').onloadedmetadata=placeFrame;$('cv').onplaying=placeFrame;window.addEventListener('resize',placeFrame);
-$('camb').onclick=openCam;$('cx').onclick=closeCam;
-function doCapture(){const v=$('cv');if(!v.videoWidth)return;const z=parseFloat($('zm').value)||1;const s=Math.round(Math.min(v.videoWidth,v.videoHeight)*.9/z),c=document.createElement('canvas');c.width=c.height=s;c.getContext('2d').drawImage(v,(v.videoWidth-s)/2,(v.videoHeight-s)/2,s,s,0,0,s,s);c.toBlob(b=>{closeCam();search(new File([b],'kamera.jpg',{type:'image/jpeg'}))},'image/jpeg',.92)}
+let camMode='search',pendingCatalogImg=null;
+function openCamFor(mode){camMode=mode;openCam()}
+$('camb').onclick=()=>openCamFor('search');
+$('ccamb').onclick=()=>openCamFor('catalog');
+$('cx').onclick=closeCam;
+function doCapture(){
+  const v=$('cv');if(!v.videoWidth)return;
+  const z=parseFloat($('zm').value)||1;
+  const s=Math.round(Math.min(v.videoWidth,v.videoHeight)*.9/z),c=document.createElement('canvas');c.width=c.height=s;
+  c.getContext('2d').drawImage(v,(v.videoWidth-s)/2,(v.videoHeight-s)/2,s,s,0,0,s,s);
+  if(camMode==='catalog'){
+    closeCam();
+    pendingCatalogImg=c;
+    $('cci').src=c.toDataURL('image/jpeg',.8);$('ccn').value='';$('cct').value=$('nt').value;$('ccm').textContent='';
+    $('cc').hidden=false;
+    return;
+  }
+  c.toBlob(b=>{closeCam();search(new File([b],'kamera.jpg',{type:'image/jpeg'}))},'image/jpeg',.92)
+}
 $('cs').onclick=doCapture;
 $('lv').onclick=doCapture;
 render();migrate();renderHist();
