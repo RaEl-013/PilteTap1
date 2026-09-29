@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plitə tap</title>
+<style>
+:root{--bg:#f2f0ec;--card:#fff;--ink:#1d2327;--mut:#6b7378;--line:#d9d5cd;--acc:#1f5f74;--acc-ink:#fff;--ok:#2f7d4f;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171a1c;--card:#22272a;--ink:#eceae5;--mut:#98a0a5;--line:#363d41;--acc:#5fb3cc;--acc-ink:#0f1a1e;--ok:#6fcf97}}
+:root[data-theme="dark"]{--bg:#171a1c;--card:#22272a;--ink:#eceae5;--mut:#98a0a5;--line:#363d41;--acc:#5fb3cc;--acc-ink:#0f1a1e;--ok:#6fcf97}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:1.5rem;margin:8px 0 2px;letter-spacing:-.01em}
+p.sub{margin:0 0 14px;color:var(--mut)}
+nav{display:flex;gap:6px;background:var(--line);padding:4px;border-radius:12px;margin-bottom:16px}
+nav button{flex:1;border:0;background:transparent;color:var(--ink);padding:10px;border-radius:9px;font:inherit;font-weight:600;cursor:pointer}
+nav button[aria-selected="true"]{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+button:focus-visible,select:focus-visible,label.btn:focus-within{outline:3px solid var(--acc);outline-offset:2px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:16px;border-radius:12px;border:0;background:var(--acc);color:var(--acc-ink);font:inherit;font-weight:700;font-size:1.05rem;cursor:pointer;text-align:center}
+.btn.alt{background:transparent;color:var(--ink);border:1.5px solid var(--line);padding:12px;font-size:1rem;margin-top:8px}
+input[type=file]{position:absolute;opacity:0;width:1px;height:1px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink)}
+.q{display:flex;gap:12px;align-items:center}
+.q img{width:84px;height:84px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.res{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.res:first-of-type{border-top:0}
+.res img{width:96px;height:96px;object-fit:cover;border-radius:10px;flex:none}
+.res b{display:block;font-size:1.05rem;word-break:break-word}
+.tag{display:inline-block;font-size:.8rem;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mut);margin-top:2px}
+.pct{margin-left:auto;font-weight:800;font-size:1.3rem;color:var(--mut);flex:none}
+.res.top .pct{color:var(--ok)}
+.res.top img{outline:3px solid var(--ok)}
+.msg{color:var(--mut);margin:6px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.it{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.it img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.it div{padding:6px 8px;font-size:.85rem;word-break:break-word}
+.it button{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:16px;cursor:pointer}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <h1>Plitə tap</h1>
+  <p class="sub">Kafel və ya metlax şəkli çək, kataloqdan ən uyğun modeli tapım.</p>
+  <p class="msg" id="mig" hidden></p>
+
+  <nav role="tablist">
+    <button role="tab" id="t1" aria-selected="true">Axtar</button>
+    <button role="tab" id="t2" aria-selected="false">Kataloq <span id="cnt"></span></button>
+  </nav>
+
+  <section id="p1">
+    <div class="panel">
+      <div class="row" style="margin-bottom:12px">
+        <label for="ft" class="msg" style="margin:0">Axtarış növü:</label>
+        <select id="ft"><option value="">Hamısı</option><option value="kafel">Kafel</option><option value="metlax">Metlax</option></select>
+      </div>
+      <button class="btn" id="camb">Kamera ilə çək</button>
+      <label class="btn alt">Fayldan seç<input type="file" id="pick" accept="image/jpeg,.jpg,.jpeg"></label>
+    </div>
+    <div class="panel" id="hsw" hidden>
+      <p class="msg" style="margin:0 0 8px">Son axtarışlar</p>
+      <div id="hs" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px"></div>
+    </div>
+    <div class="panel" id="out" hidden>
+      <div class="q"><img id="qi" alt="Çəkilən şəkil"><div><b>Çəkdiyin şəkil</b><div class="msg" id="qs"></div></div></div>
+      <div id="rs"></div>
+    </div>
+  </section>
+
+  <section id="p2" hidden>
+    <div class="panel">
+      <div class="row" style="margin-bottom:12px">
+        <label for="nt" class="msg" style="margin:0">Yüklənən şəkillər:</label>
+        <select id="nt"><option value="kafel">Kafel</option><option value="metlax">Metlax</option></select>
+      </div>
+      <label class="btn">Şəkilləri əlavə et<input type="file" id="add" accept="image/jpeg,.jpg,.jpeg" multiple></label>
+      <p class="msg" id="ast">JPEG (.jpg) fayllarını birlikdə seçə bilərsən. Model adı fayl adından götürülür. Şəkillər yalnız bu cihazda saxlanılır.</p>
+    </div>
+    <div class="panel">
+      <button class="btn alt" id="tune" style="margin-top:0">Dəqiqliyi yoxla və avto-tənzimlə</button>
+      <p class="msg" id="tst">Kataloqdakı şəkilləri işığı, kəsimi və bulanıqlığı dəyişib özü ilə müqayisə edir, ən yaxşı çəkiləri seçir və qarışan modelləri göstərir. Təxminən 1-2 dəqiqə çəkir.</p>
+      <div class="msg" id="tres" style="white-space:pre-wrap"></div>
+    </div>
+    <div class="panel">
+      <div class="row">
+        <input id="cq" type="search" placeholder="Model adı ilə axtar" style="flex:1;min-width:140px;font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink)">
+        <select id="cf"><option value="">Hamısı</option><option value="kafel">Kafel</option><option value="metlax">Metlax</option></select>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn alt" id="csel" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem">Görünənləri seç</button>
+        <button class="btn alt" id="dsel" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem;color:#c0392b;border-color:#c0392b" disabled>Seçilmişləri sil (0)</button>
+        <button class="btn alt" id="dall" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem;color:#c0392b;border-color:#c0392b">Hamısını sil</button>
+      </div>
+      <p class="msg" style="margin-bottom:0">Şəklin üstünə basıb adını, növünü və ya şəklini dəyişə bilərsiniz.</p>
+    </div>
+    <div class="grid" id="list"></div>
+  </section>
+</main>
+<div id="ed" hidden style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:8;display:flex;align-items:center;justify-content:center;padding:16px">
+  <div class="panel" style="max-width:420px;width:100%;max-height:92vh;overflow:auto;margin:0">
+    <div class="q"><img id="ei" alt="" style="width:110px;height:110px"><div style="flex:1"><label class="btn alt" style="margin:0;padding:10px;font-size:.95rem">Şəkli dəyiş<input type="file" id="ef" accept="image/jpeg,.jpg,.jpeg"></label><div class="msg" id="em"></div></div></div>
+    <p class="msg" style="margin:12px 0 4px">Model adı</p>
+    <input id="en" type="text" style="width:100%;font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink)">
+    <div class="row" style="margin:10px 0"><span class="msg" style="margin:0">Növ:</span><select id="et"><option value="kafel">Kafel</option><option value="metlax">Metlax</option></select></div>
+    <label class="row msg" style="margin:6px 0"><input type="checkbox" id="eall"> Eyni adlı bütün şəkillərə tətbiq et</label>
+    <div class="row"><button class="btn" id="esv" style="flex:1;width:auto">Yadda saxla</button><button class="btn alt" id="ecl" style="width:auto;margin:0">Bağla</button></div>
+    <button class="btn alt" id="edl" style="color:#c0392b;border-color:#c0392b">Bu şəkli sil</button>
+  </div>
+</div>
+<div id="ask" hidden style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10;display:flex;align-items:center;justify-content:center;padding:16px">
+  <div class="panel" style="max-width:360px;width:100%;margin:0"><p id="am" style="margin-top:0"></p>
+    <div class="row"><button class="btn" id="ay" style="flex:1;width:auto;background:#c0392b;color:#fff">Bəli, sil</button><button class="btn alt" id="an" style="width:auto;margin:0">Xeyr</button></div></div>
+</div>
+<div id="cm" hidden style="position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px">
+  <div style="position:relative;display:inline-block;max-width:100%;overflow:hidden;border-radius:12px">
+    <video id="cv" autoplay playsinline muted style="display:block;max-width:100%;max-height:70vh;transform-origin:center center"></video>
+    <div id="fr" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:3px solid #fff;border-radius:6px;box-shadow:0 0 0 9999px rgba(0,0,0,.55);pointer-events:none"></div>
+  </div>
+  <div class="row" style="width:100%;max-width:420px;gap:10px;align-items:center">
+    <span style="color:#fff;font-size:.85rem">Yaxınlaşdır</span>
+    <input type="range" id="zm" min="1" max="3" step="0.1" value="1" style="flex:1">
+    <span style="color:#fff;font-size:.85rem;min-width:36px;text-align:right" id="zmv">1.0x</span>
+  </div>
+  <div id="chk" style="color:#fff;font-size:.95rem;line-height:1.55;min-width:250px;max-width:420px"></div>
+  <div id="lv" hidden style="display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.1);border-radius:10px;padding:8px 10px;max-width:420px;width:100%;cursor:pointer">
+    <img id="lvi" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex:none">
+    <div style="flex:1;min-width:0"><div style="color:#fff;font-weight:700;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="lvn"></div><div style="color:#cfd6da;font-size:.78rem" id="lvty"></div></div>
+    <div style="color:#8be28b;font-weight:800;font-size:1.05rem;flex:none" id="lvp"></div>
+  </div>
+  <div style="color:#cfd6da;font-size:.8rem;max-width:420px;text-align:center">Standart: işıq normal, kölgəsiz, kəskin; kamera plitəyə paralel, plitə çərçivəni doldursun (təxminən 20-40 sm, plitənin ölçüsündən asılıdır).</div>
+  <div class="row"><button class="btn" id="cs" style="width:auto;padding:12px 28px">Çək</button><button class="btn alt" id="cx" style="width:auto;margin:0;padding:12px 28px;color:#fff;border-color:#fff">Bağla</button></div>
+  <div class="msg" id="ce" style="color:#fff"></div>
+</div>
+
+<script src="ort/ort.wasm.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let ipcRenderer=null;try{ipcRenderer=require('electron').ipcRenderer}catch(e){}
+/* ---------- ONNX Runtime Web (Electron olmayan mühitlər üçün, məs. Android) ---------- */
+let ortReady=null;
+async function ensureOrt(){
+  if(ortReady)return ortReady;
+  if(typeof ort==='undefined')throw new Error('ONNX Runtime Web tapılmadı (ort/ qovluğu yoxdur)');
+  ort.env.wasm.numThreads=1;ort.env.wasm.simd=true;ort.env.wasm.wasmPaths='ort/';
+  const [sd,sc]=await Promise.all([
+    ort.InferenceSession.create('model/model_quantized.onnx'),
+    ort.InferenceSession.create('model/clip_vision_quantized.onnx')
+  ]);
+  ortReady={sd,sc};return ortReady;
+}
+function unitArr(v){let n=0;for(let i=0;i<v.length;i++)n+=v[i]*v[i];n=Math.sqrt(n)||1;const o=new Float32Array(v.length);for(let i=0;i<v.length;i++)o[i]=v[i]/n;return o}
+async function embedWeb(f,g){
+  const{sd,sc}=await ensureOrt();
+  const od=await sd.run({pixel_values:new ort.Tensor('float32',f,[1,3,224,224])});
+  const h=od.last_hidden_state,dd=h.data,N=h.dims[1],D=h.dims[2];
+  const cls=dd.slice(0,D),mean=new Float32Array(D);
+  for(let i=1;i<N;i++)for(let j=0;j<D;j++)mean[j]+=dd[i*D+j];
+  for(let j=0;j<D;j++)mean[j]/=(N-1);
+  const uc=unitArr(cls),um=unitArr(mean),dvec=new Array(D*2);
+  for(let j=0;j<D;j++){dvec[j]=uc[j]/Math.SQRT2;dvec[D+j]=um[j]/Math.SQRT2}
+  const oc=await sc.run({pixel_values:new ort.Tensor('float32',g,[1,3,224,224])});
+  return{d:dvec,c:Array.from(unitArr(oc.image_embeds.data))};
+}
+async function embed(f,g){return ipcRenderer?await ipcRenderer.invoke('embed',f,g):await embedWeb(f,g)}
+let W={d:.4,c:.4,o:.2};try{const w=JSON.parse(localStorage.getItem('plite_w'));if(w&&w.d!=null)W=w}catch(e){}
+/* ---------- storage (IndexedDB) ---------- */
+let mem=[];let dbp=null;
+function db(){if(dbp)return dbp;dbp=new Promise((res,rej)=>{try{const r=indexedDB.open('plite',1);r.onupgradeneeded=()=>r.result.createObjectStore('items',{keyPath:'id',autoIncrement:true});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});return dbp}
+async function all(){try{const d=await db();return await new Promise((res,rej)=>{const q=d.transaction('items').objectStore('items').getAll();q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}catch(e){return mem}}
+async function put(o){try{const d=await db();await new Promise((res,rej)=>{const q=d.transaction('items','readwrite').objectStore('items').add(o);q.onsuccess=res;q.onerror=()=>rej(q.error)})}catch(e){o.id=Date.now()+Math.random();mem.push(o)}}
+async function del(id){try{const d=await db();await new Promise((res,rej)=>{const q=d.transaction('items','readwrite').objectStore('items').delete(id);q.onsuccess=res;q.onerror=()=>rej(q.error)})}catch(e){mem=mem.filter(x=>x.id!==id)}}
+
+async function upd(o){try{const d=await db();await new Promise((res,rej)=>{const q=d.transaction('items','readwrite').objectStore('items').put(o);q.onsuccess=res;q.onerror=()=>rej(q.error)})}catch(e){mem=mem.map(x=>x.id===o.id?o:x)}}
+function loadUrl(u){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('Şəkil açılmadı'));i.src=u})}
+/* ---------- DINOv2 embedding (main prosesdə işləyir) ---------- */
+const CROPS=[[0,0,1],[.2,.2,.6],[0,0,.55],[.45,0,.55],[0,.45,.55],[.45,.45,.55]];
+async function dino(src,rot,cr){
+  cr=cr||CROPS[0];
+  const S=224,W=src.naturalWidth||src.width,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d',{willReadFrequently:true});
+  x.translate(S/2,S/2);x.rotate(rot*Math.PI/2);x.drawImage(src,cr[0]*W,cr[1]*W,cr[2]*W,cr[2]*W,-S/2,-S/2,S,S);
+  const d=x.getImageData(0,0,S,S).data,n=S*S,f=new Float32Array(3*n),g=new Float32Array(3*n),M=[.485,.456,.406],SD=[.229,.224,.225],MC=[.48145466,.4578275,.40821073],SC=[.26862954,.26130258,.27577711];
+  for(let i=0;i<n;i++)for(let ch=0;ch<3;ch++){const v=d[i*4+ch]/255;f[ch*n+i]=(v-M[ch])/SD[ch];g[ch*n+i]=(v-MC[ch])/SC[ch]}
+  return await embed(f,g);
+}
+async function itemEmbs(c){const o=[];for(const cr of CROPS)o.push(await dino(c,0,cr));return o}
+function dot(a,b){let s=0;for(let i=0;i<a.length;i++)s+=a[i]*b[i];return s}
+async function migrate(){
+  const items=(await all()).filter(x=>!x.v2);if(!items.length)return;
+  for(let i=0;i<items.length;i++){
+    $('mig').hidden=false;$('mig').textContent='Kataloq yeni üsulla yenilənir: '+(i+1)+' / '+items.length;
+    try{const im=await loadUrl(items[i].thumb);items[i].v2=await itemEmbs(im);await upd(items[i])}catch(e){$('mig').textContent='Xəta: '+e.message;return}
+  }
+  $('mig').hidden=true;render();
+}
+/* ---------- avto-tenzimleme ---------- */
+function variantsOf(img){
+  const w=img.naturalWidth||img.width;
+  const mk=fn=>{const c=document.createElement('canvas');c.width=c.height=448;const x=c.getContext('2d');fn(x);return c};
+  return [
+    mk(x=>{x.filter='brightness(0.7) contrast(1.1)';x.drawImage(img,0,0,448,448)}),
+    mk(x=>{x.drawImage(img,.2*w,.2*w,.6*w,.6*w,0,0,448,448)}),
+    mk(x=>{x.filter='blur(1.5px) brightness(1.15)';x.drawImage(img,0,0,448,448)})
+  ];
+}
+const CAND=[[.4,.4,.2],[1,0,0],[0,1,0],[0,0,1],[.5,.5,0],[.6,.2,.2],[.2,.6,.2],[.7,0,.3],[0,.7,.3],[.5,.25,.25],[.25,.5,.25]];
+async function tune(){
+  const btn=$('tune');btn.disabled=true;$('tres').textContent='';
+  try{
+    const its=(await all()).filter(x=>x.v2);
+    if(its.length<3){$('tst').textContent='Yoxlama üçün kataloqda ən azı 3 şəkil olmalıdır.';return}
+    const key=i=>its[i].type+'|'+its[i].name;
+    const cnt={};its.forEach((_,i)=>cnt[key(i)]=(cnt[key(i)]||0)+1);
+    const pick=its.map((_,i)=>i).sort(()=>Math.random()-.5).slice(0,60);
+    const comps=[];let n=0;const total=pick.length*3;
+    for(const qi of pick){
+      const img=await loadUrl(its[qi].thumb);
+      for(const vc of variantsOf(img)){
+        n++;$('tst').textContent='Yoxlanılır: '+n+' / '+total;
+        const qe=[await dino(vc,0,CROPS[0]),await dino(vc,0,CROPS[1])],qf=feat(vc,0);
+        const D=[],C=[],O=[];
+        for(const it of its){
+          let dd=-1,cc=-1;
+          for(let a=0;a<2;a++)for(let b=0;b<it.v2.length;b++){const p=a===b?0:.04,x1=dot(qe[a].d,it.v2[b].d)-p,x2=dot(qe[a].c,it.v2[b].c)-p;if(x1>dd)dd=x1;if(x2>cc)cc=x2}
+          D.push(dd);C.push(cc);O.push(sim(qf,it.f));
+        }
+        comps.push({t:qi,ex:cnt[key(qi)]>1?qi:-1,D,C,O});
+      }
+    }
+    const run=w=>{let ok=0;const wrong={};
+      for(const q of comps){let bi=-1,bs=-1e9;
+        for(let j=0;j<its.length;j++){if(j===q.ex)continue;const v=w[0]*q.D[j]+w[1]*q.C[j]+w[2]*q.O[j];if(v>bs){bs=v;bi=j}}
+        if(key(bi)===key(q.t))ok++;else{const k=its[q.t].name+' ↔ '+its[bi].name;wrong[k]=(wrong[k]||0)+1}}
+      return{ok,wrong}};
+    const res=CAND.map(run);let bi=0;res.forEach((r,i)=>{if(r.ok>res[bi].ok)bi=i});
+    const pc=r=>Math.round(100*r.ok/comps.length)+'%';
+    const nm=w=>(w[0]?'DINO '+w[0]+' ':'')+(w[1]?'CLIP '+w[1]+' ':'')+(w[2]?'rəng '+w[2]:'');
+    W={d:CAND[bi][0],c:CAND[bi][1],o:CAND[bi][2]};try{localStorage.setItem('plite_w',JSON.stringify(W))}catch(e){}
+    const bad=Object.entries(res[bi].wrong).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    $('tres').textContent='Nəticə ('+comps.length+' sınaq): tək DINO '+pc(res[1])+', tək CLIP '+pc(res[2])+', tək rəng '+pc(res[3])+'\n'+
+      'Ən yaxşı: '+nm(CAND[bi])+'→ '+pc(res[bi])+' (tətbiq olundu)\n'+
+      (bad.length?'Ən çox qarışan modellər:\n'+bad.map(([k,v])=>'  '+k+' ('+v+')').join('\n'):'Qarışan model tapılmadı.');
+    $('tst').textContent='Bitdi.';
+  }catch(e){$('tst').textContent='Xəta: '+e.message}
+  finally{btn.disabled=false}
+}
+$('tune').onclick=tune;
+/* ---------- image features ---------- */
+function load(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),i=new Image();i.onload=()=>{URL.revokeObjectURL(u);res(i)};i.onerror=()=>rej(new Error('Şəkil açılmadı'));i.src=u})}
+function squareCanvas(img,size){const c=document.createElement('canvas');c.width=c.height=size;const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height,m=Math.min(w,h);c.getContext('2d').drawImage(img,(w-m)/2,(h-m)/2,m,m,0,0,size,size);return c}
+function feat(src,rot){
+  const S=48,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d',{willReadFrequently:true});
+  x.translate(S/2,S/2);x.rotate(rot*Math.PI/2);x.drawImage(src,-S/2,-S/2,S,S);
+  const d=x.getImageData(0,0,S,S).data,g=new Float32Array(S*S);
+  const grid=new Float32Array(48),gn=new Float32Array(16),hist=new Float32Array(64);
+  for(let y=0;y<S;y++)for(let i=0;i<S;i++){
+    const k=(y*S+i)*4,r=d[k],gg=d[k+1],b=d[k+2];g[y*S+i]=.299*r+.587*gg+.114*b;
+    const cell=((y/12)|0)*4+((i/12)|0);grid[cell*3]+=r;grid[cell*3+1]+=gg;grid[cell*3+2]+=b;gn[cell]++;
+    hist[(r>>6)*16+(gg>>6)*4+(b>>6)]++;
+  }
+  for(let c2=0;c2<16;c2++)for(let j=0;j<3;j++)grid[c2*3+j]/=gn[c2]*255;
+  for(let j=0;j<64;j++)hist[j]/=S*S;
+  const hog=new Float32Array(72);
+  for(let y=1;y<S-1;y++)for(let i=1;i<S-1;i++){
+    const gx=g[y*S+i+1]-g[y*S+i-1],gy=g[(y+1)*S+i]-g[(y-1)*S+i],mag=Math.hypot(gx,gy);
+    if(mag<4)continue;let a=Math.atan2(gy,gx);if(a<0)a+=Math.PI;
+    const bin=Math.min(7,(a/Math.PI*8)|0),cell=((y/16)|0)*3+((i/16)|0);hog[cell*8+bin]+=mag;
+  }
+  let n=0;for(const v of hog)n+=v*v;n=Math.sqrt(n)||1;for(let j=0;j<72;j++)hog[j]/=n;
+  return{g:Array.from(grid),h:Array.from(hist),o:Array.from(hog)};
+}
+function sim(a,b){
+  let s1=0;for(let i=0;i<48;i++)s1+=Math.abs(a.g[i]-b.g[i]);s1=1-s1/48;
+  let s2=0;for(let i=0;i<64;i++)s2+=Math.min(a.h[i],b.h[i]);
+  let s3=0;for(let i=0;i<72;i++)s3+=a.o[i]*b.o[i];
+  return .4*s1+.3*s2+.3*Math.max(0,s3);
+}
+
+/* ---------- axtarış tarixçəsi ---------- */
+function smallThumb(src,size){const c=document.createElement('canvas');c.width=c.height=size;c.getContext('2d').drawImage(src,0,0,size,size);return c.toDataURL('image/jpeg',.6)}
+function loadHist(){try{return JSON.parse(localStorage.getItem('plite_hist')||'[]')}catch(e){return []}}
+function saveHist(h){try{localStorage.setItem('plite_hist',JSON.stringify(h.slice(-12)))}catch(e){}}
+async function pushHist(qCanvas,sc){
+  if(!sc.length)return;
+  try{
+    const top=sc[0],timg=await loadUrl(top.it.thumb);
+    const h=loadHist();
+    h.push({ts:Date.now(),q:smallThumb(qCanvas,72),name:top.it.name,type:top.it.type,pct:Math.round(top.s*100),thumb:smallThumb(timg,72)});
+    saveHist(h);renderHist();
+  }catch(e){}
+}
+function renderHist(){
+  const h=loadHist().slice().reverse(),wrap=$('hsw'),box=$('hs');
+  if(!h.length){wrap.hidden=true;return}
+  wrap.hidden=false;box.innerHTML='';
+  h.forEach(entry=>{
+    const d=document.createElement('div');d.style.cssText='flex:none;width:78px;cursor:pointer;text-align:center';
+    const im=new Image();im.src=entry.q;im.alt=entry.name;im.style.cssText='width:64px;height:64px;object-fit:cover;border-radius:8px;border:2px solid var(--line)';
+    const t=document.createElement('div');t.style.cssText='font-size:.72rem;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px';t.textContent=entry.name;
+    const p=document.createElement('div');p.style.cssText='font-size:.7rem;color:var(--ok);font-weight:700';p.textContent=entry.pct+'%';
+    d.append(im,t,p);d.onclick=()=>showHist(entry);box.append(d);
+  });
+}
+function showHist(entry){
+  $('out').hidden=false;$('qi').src=entry.q;$('qs').textContent='Keçmiş axtarış · '+new Date(entry.ts).toLocaleString('az');
+  const rs=$('rs');rs.innerHTML='';
+  const d=document.createElement('div');d.className='res top';
+  const im=new Image();im.src=entry.thumb;im.alt=entry.name;
+  const t=document.createElement('div');const b=document.createElement('b');b.textContent=entry.name;
+  const tg=document.createElement('span');tg.className='tag';tg.textContent=entry.type==='kafel'?'Kafel':'Metlax';
+  t.append(b,tg);
+  const p=document.createElement('div');p.className='pct';p.textContent=entry.pct+'%';
+  d.append(im,t,p);rs.append(d);
+  const note=document.createElement('p');note.className='msg';note.textContent='Bu, keçmiş axtarışın yalnız ən uyğun nəticəsidir. Dəqiq nəticə üçün şəkli təzədən çək.';rs.append(note);
+}
+/* ---------- UI ---------- */
+function tab(n){for(const i of [1,2]){$('p'+i).hidden=i!==n;$('t'+i).setAttribute('aria-selected',i===n)}if(n===2)render()}
+$('t1').onclick=()=>tab(1);$('t2').onclick=()=>tab(2);
+
+let sel=new Set(),visible=[],cur=null,newImg=null;
+function ask(m){return new Promise(r=>{$('am').textContent=m;$('ask').hidden=false;const f=v=>{$('ask').hidden=true;$('ay').onclick=$('an').onclick=null;r(v)};$('ay').onclick=()=>f(true);$('an').onclick=()=>f(false)})}
+function upBulk(){$('dsel').textContent='Seçilmişləri sil ('+sel.size+')';$('dsel').disabled=!sel.size}
+function edit(it){cur=it;newImg=null;$('ei').src=it.thumb;$('en').value=it.name;$('et').value=it.type;$('eall').checked=false;$('em').textContent='';$('ed').hidden=false}
+async function render(){
+  const all_=await all();$('cnt').textContent=all_.length?'('+all_.length+')':'';
+  const q=$('cq').value.trim().toLowerCase(),tf=$('cf').value;
+  const items=all_.filter(it=>(!tf||it.type===tf)&&(!q||it.name.toLowerCase().includes(q)));
+  visible=items;const ids=new Set(all_.map(x=>x.id));sel.forEach(id=>{if(!ids.has(id))sel.delete(id)});upBulk();
+  const L=$('list');L.innerHTML='';
+  if(!items.length){L.innerHTML='<p class="msg">'+(all_.length?'Uyğun şəkil tapılmadı.':'Kataloq boşdur. Yuxarıdan plitə şəkillərini əlavə et.')+'</p>';return}
+  for(const it of items){
+    const e=document.createElement('div');e.className='it';
+    const im=new Image();im.src=it.thumb;im.alt=it.name;im.style.cursor='pointer';im.onclick=()=>edit(it);
+    const dv=document.createElement('div');dv.textContent=it.name+' · '+(it.type==='kafel'?'Kafel':'Metlax');dv.style.cursor='pointer';dv.onclick=()=>edit(it);
+    const cb=document.createElement('input');cb.type='checkbox';cb.checked=sel.has(it.id);cb.setAttribute('aria-label','Seç: '+it.name);
+    cb.style.cssText='position:absolute;top:6px;left:6px;width:20px;height:20px';cb.onchange=()=>{cb.checked?sel.add(it.id):sel.delete(it.id);upBulk()};
+    const b=document.createElement('button');b.textContent='×';b.setAttribute('aria-label','Sil: '+it.name);
+    b.onclick=async()=>{if(!await ask('«'+it.name+'» şəkli silinsin?'))return;await del(it.id);sel.delete(it.id);render()};
+    e.append(im,dv,cb,b);L.append(e);
+  }
+}
+$('cq').oninput=render;$('cf').onchange=render;
+$('csel').onclick=()=>{const allSel=visible.length&&visible.every(i=>sel.has(i.id));visible.forEach(i=>allSel?sel.delete(i.id):sel.add(i.id));render()};
+$('dsel').onclick=async()=>{if(!sel.size)return;if(!await ask(sel.size+' şəkil silinsin?'))return;for(const id of [...sel])await del(id);sel.clear();render()};
+$('dall').onclick=async()=>{const a=await all();if(!a.length)return;if(!await ask('Bütün kataloq ('+a.length+' şəkil) silinsin? Bu geri qaytarılmır.'))return;for(const x of a)await del(x.id);sel.clear();render()};
+$('ecl').onclick=()=>{$('ed').hidden=true};
+$('ef').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const img=await load(f);newImg=squareCanvas(img,448);$('ei').src=newImg.toDataURL('image/jpeg',.8);$('em').textContent='Yeni şəkil seçildi. «Yadda saxla» düyməsini basın.'}
+  catch(err){$('em').textContent='Şəkil açılmadı.'}};
+$('esv').onclick=async()=>{
+  const name=$('en').value.trim();if(!name){$('em').textContent='Model adı boş ola bilməz.';return}
+  const btn=$('esv');btn.disabled=true;
+  try{
+    const type=$('et').value,oldKey=cur.type+'|'+cur.name;
+    if($('eall').checked){for(const x of await all())if(x.type+'|'+x.name===oldKey&&x.id!==cur.id){x.name=name;x.type=type;await upd(x)}}
+    cur.name=name;cur.type=type;
+    if(newImg){$('em').textContent='Şəkil işlənir...';cur.thumb=newImg.toDataURL('image/jpeg',.8);cur.f=feat(newImg,0);cur.v2=await itemEmbs(newImg)}
+    await upd(cur);$('ed').hidden=true;render();
+  }catch(err){$('em').textContent='Xəta: '+err.message}finally{btn.disabled=false}
+};
+$('edl').onclick=async()=>{if(!await ask('«'+cur.name+'» şəkli silinsin?'))return;await del(cur.id);sel.delete(cur.id);$('ed').hidden=true;render()};
+async function addFiles(list,input){
+  const isImg=f=>f.type==='image/jpeg'||/\.jpe?g$/i.test(f.name);
+  const files=[...list].filter(isImg),base=$('nt').value;let ok=0,lastErr='';
+  if(!files.length){$('ast').textContent='JPEG şəkil tapılmadı. Yalnız .jpg / .jpeg fayllar qəbul olunur.';input.value='';return}
+  for(let i=0;i<files.length;i++){
+    $('ast').textContent='İşlənir: '+(i+1)+' / '+files.length;
+    const path=(files[i].webkitRelativePath||'').toLowerCase();
+    const type=/metlax|metlaq|metlakh/.test(path)?'metlax':/kafel|kafe/.test(path)?'kafel':base;
+    try{
+      const img=await load(files[i]),c=squareCanvas(img,448);
+      await put({name:files[i].name.replace(/\.[^.]+$/,''),type,thumb:c.toDataURL('image/jpeg',.8),f:feat(c,0),v2:await itemEmbs(c)});ok++;
+    }catch(e){lastErr=e.message}
+    await new Promise(r=>setTimeout(r));
+  }
+  $('ast').textContent=ok+' şəkil əlavə olundu.'+(ok<files.length?' '+(files.length-ok)+' şəkil əlavə olunmadı.':'')+(lastErr?' Xəta: '+lastErr:'');
+  input.value='';render();
+}
+$('add').onchange=e=>addFiles(e.target.files,e.target);
+
+let lastQ=null;
+async function addQuery(name,type,btn){
+  if(!lastQ)return;btn.disabled=true;btn.textContent='Əlavə olunur...';
+  try{await put({name,type,thumb:lastQ.toDataURL('image/jpeg',.8),f:feat(lastQ,0),v2:await itemEmbs(lastQ)});btn.textContent='Əlavə olundu ✓';render()}
+  catch(e){btn.textContent='Xəta: '+e.message}
+}
+async function search(file){
+  if(!file)return;
+  const out=$('out'),rs=$('rs');out.hidden=false;rs.innerHTML='';$('qs').textContent='Axtarılır...';
+  try{
+    const items=(await all()).filter(x=>x.v2&&(!$('ft').value||x.type===$('ft').value));
+    const img=await load(file),c=squareCanvas(img,448);lastQ=c;$('qi').src=c.toDataURL('image/jpeg',.8);
+    if(!items.length){$('qs').textContent='';rs.innerHTML='<p class="msg">Kataloqda uyğun şəkil yoxdur. Əvvəlcə «Kataloq» bölməsinə plitə şəkilləri əlavə et.</p>';return}
+    const qf=[0,1,2,3].map(r=>feat(c,r));
+    const qe=[];for(let r=0;r<4;r++)qe.push([await dino(c,r,CROPS[0]),await dino(c,r,CROPS[1])]);
+    const best=new Map();
+    for(const it of items){
+      let s=-1;
+      for(let r=0;r<4;r++){
+        let dd=-1,cc=-1;
+        for(let a=0;a<2;a++)for(let b=0;b<it.v2.length;b++){const p=a===b?0:.04,x1=dot(qe[r][a].d,it.v2[b].d)-p,x2=dot(qe[r][a].c,it.v2[b].c)-p;if(x1>dd)dd=x1;if(x2>cc)cc=x2}
+        const v=W.d*dd+W.c*cc+W.o*sim(qf[r],it.f);if(v>s)s=v;
+      }
+      const key=it.type+'|'+it.name,cur=best.get(key);
+      if(!cur)best.set(key,{it,s,n:1});else{cur.n++;if(s>cur.s){cur.it=it;cur.s=s}}
+    }
+    const sc=[...best.values()].sort((a,b)=>b.s-a.s).slice(0,3);
+    $('qs').textContent=best.size+' model, '+items.length+' şəkil arasında axtarıldı';
+    sc.forEach((r,i)=>{
+      const d=document.createElement('div');d.className='res'+(i===0?' top':'');
+      const im=new Image();im.src=r.it.thumb;im.alt=r.it.name;
+      const t=document.createElement('div');const b=document.createElement('b');b.textContent=r.it.name;
+      const tg=document.createElement('span');tg.className='tag';tg.textContent=(r.it.type==='kafel'?'Kafel':'Metlax')+' · '+r.n+' şəkil';
+      const ok=document.createElement('button');ok.className='btn alt';ok.style.cssText='padding:8px;font-size:.9rem;margin-top:8px';ok.textContent='Düzgündür, bu şəkli də əlavə et';
+      ok.onclick=()=>addQuery(r.it.name,r.it.type,ok);
+      t.append(b,tg,ok);
+      const p=document.createElement('div');p.className='pct';p.textContent=Math.round(r.s*100)+'%';
+      d.append(im,t,p);rs.append(d);
+    });
+    pushHist(c,sc);
+    const names=[...best.values()].map(v=>v.it).sort((a,b)=>a.name.localeCompare(b.name));
+    const w=document.createElement('div');w.className='row';w.style.cssText='margin-top:12px;padding-top:12px;border-top:1px solid var(--line)';
+    const lb=document.createElement('span');lb.className='msg';lb.style.margin='0';lb.textContent='Düzgün model başqadırsa:';
+    const sel=document.createElement('select');names.forEach((n,i)=>{const o=document.createElement('option');o.value=i;o.textContent=n.name+' ('+(n.type==='kafel'?'Kafel':'Metlax')+')';sel.append(o)});
+    const bt=document.createElement('button');bt.className='btn alt';bt.style.cssText='width:auto;margin:0;padding:8px 14px;font-size:.9rem';bt.textContent='Bu modelə əlavə et';
+    bt.onclick=()=>{const n=names[sel.value];addQuery(n.name,n.type,bt)};
+    w.append(lb,sel,bt);rs.append(w);
+  }catch(e){$('qs').textContent='';rs.innerHTML='<p class="msg">Xəta: '+e.message+'</p>'}
+}
+$('pick').onchange=e=>{search(e.target.files[0]);e.target.value=''};
+let stream=null,anT=null,hist=[],anC=null,liveTick=0,liveBusy=false;
+$('zm').oninput=()=>{const z=parseFloat($('zm').value)||1;$('zmv').textContent=z.toFixed(1)+'x';$('cv').style.transform='scale('+z+')'};
+async function openCam(){$('cm').hidden=false;$('ce').textContent='';$('lv').hidden=true;$('zm').value=1;$('zmv').textContent='1.0x';$('cv').style.transform='scale(1)';try{stream=await navigator.mediaDevices.getUserMedia({video:true});$('cv').srcObject=stream;hist=[];liveTick=0;clearInterval(anT);anT=setInterval(analyze,400)}catch(e){$('ce').textContent='Kamera açılmadı. Kameranın qoşulduğunu və icazə verildiyini yoxla.'}}
+function closeCam(){clearInterval(anT);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('cm').hidden=true;$('lv').hidden=true}
+function analyzePixels(d,S){
+  const n=S*S,L=new Float32Array(n),q=[0,0,0,0],qn=[0,0,0,0],rr=[0,0,0],cr=[0,0,0];
+  let sum=0,dark=0,bright=0,rn=0,cn=0;
+  for(let y=0;y<S;y++)for(let x=0;x<S;x++){
+    const i=y*S+x,k=i*4,l=.299*d[k]+.587*d[k+1]+.114*d[k+2];
+    L[i]=l;sum+=l;if(l<25)dark++;if(l>245)bright++;
+    const qi=(y>=S/2?2:0)+(x>=S/2?1:0);q[qi]+=l;qn[qi]++;
+    if(x<8||y<8||x>=S-8||y>=S-8){rr[0]+=d[k];rr[1]+=d[k+1];rr[2]+=d[k+2];rn++}
+    else if(x>=S*.3&&x<S*.7&&y>=S*.3&&y<S*.7){cr[0]+=d[k];cr[1]+=d[k+1];cr[2]+=d[k+2];cn++}
+  }
+  const mean=sum/n,qm=q.map((a,i)=>a/qn[i]);
+  const ev=(Math.max(...qm)-Math.min(...qm))/Math.max(mean,1);
+  let ls=0,l2=0,m=0;
+  for(let y=1;y<S-1;y++)for(let x=1;x<S-1;x++){const i=y*S+x,p=4*L[i]-L[i-1]-L[i+1]-L[i-S]-L[i+S];ls+=p;l2+=p*p;m++}
+  const lv=l2/m-(ls/m)*(ls/m);
+  const dist=Math.hypot(rr[0]/rn-cr[0]/cn,rr[1]/rn-cr[1]/cn,rr[2]/rn-cr[2]/cn);
+  return{mean,dark:dark/n,bright:bright/n,ev,lv,dist};
+}
+function judge(a,peak,histLen){
+  const r=[];
+  if(a.mean<70)r.push(['bad','İşıq çox azdır, daha işıqlı yerdə çək']);
+  else if(a.mean<95)r.push(['warn','İşıq azdır, işığı artır']);
+  else if(a.mean>200)r.push(['warn','İşıq çox güclüdür, işığı azalt']);
+  else if(a.bright>.08)r.push(['warn','Parıltı (ağ ləkə) var, kameranı bir az əyib işıqdan uzaqlaşdır']);
+  else if(a.dark>.08)r.push(['warn','Çox qaranlıq hissələr var']);
+  else r.push(['ok','İşıq normaldır']);
+  r.push(a.ev>.35?['warn','Kölgə və ya qeyri-bərabər işıq var']:['ok','Kölgə yoxdur']);
+  r.push(histLen>=6&&peak>25&&a.lv<.45*peak?['warn','Şəkil bulanıqdır, kameranı sabit tut və məsafəni tənzimlə']:['ok','Şəkil kəskindir']);
+  r.push(a.dist>60?['warn','Plitə çərçivəni doldurmur ola bilər (təxmini), yaxınlaş']:['ok','Məsafə uyğundur (təxmini)']);
+  return r;
+}
+function analyze(){
+  const v=$('cv');if(!v.videoWidth||$('cm').hidden)return;
+  const z=parseFloat($('zm').value)||1;
+  const S=96,c=anC||(anC=document.createElement('canvas'));c.width=c.height=S;const x=c.getContext('2d',{willReadFrequently:true});
+  const s=Math.min(v.videoWidth,v.videoHeight)*.9/z;x.drawImage(v,(v.videoWidth-s)/2,(v.videoHeight-s)/2,s,s,0,0,S,S);
+  const a=analyzePixels(x.getImageData(0,0,S,S).data,S);
+  hist.push(a.lv);if(hist.length>12)hist.shift();
+  const res=judge(a,Math.max(...hist),hist.length);
+  const bad=res.some(r=>r[0]==='bad'),warn=res.some(r=>r[0]!=='ok'),col=bad?'#e74c3c':warn?'#f39c12':'#2ecc71';
+  $('fr').style.borderColor=col;
+  $('chk').innerHTML='<div style="font-weight:700;color:'+col+'">'+(warn?'Standarta uyğun deyil':'Standarta uyğundur ✓')+'</div>'+
+    res.map(r=>'<div style="color:'+(r[0]==='ok'?'#2ecc71':r[0]==='bad'?'#e74c3c':'#f39c12')+'">'+(r[0]==='ok'?'✓ ':'! ')+r[1]+'</div>').join('');
+  $('cs').textContent=warn?'Yenə də çək':'Çək ✓';
+  liveTick++;
+  if(!bad&&!liveBusy&&liveTick%3===0){liveBusy=true;liveMatch(v,s).finally(()=>{liveBusy=false})}
+}
+async function liveMatch(v,s){
+  try{
+    const items=(await all()).filter(x=>x.v2);
+    if(!items.length){$('lv').hidden=true;return}
+    const qc=document.createElement('canvas');qc.width=qc.height=256;
+    qc.getContext('2d').drawImage(v,(v.videoWidth-s)/2,(v.videoHeight-s)/2,s,s,0,0,256,256);
+    const emb=await dino(qc,0,CROPS[0]),qf=feat(qc,0);
+    const best=new Map();
+    for(const it of items){
+      let dd=-1,cc=-1;
+      for(const e of it.v2){const x1=dot(emb.d,e.d),x2=dot(emb.c,e.c);if(x1>dd)dd=x1;if(x2>cc)cc=x2}
+      const vv=W.d*dd+W.c*cc+W.o*sim(qf,it.f),key=it.type+'|'+it.name,prev=best.get(key);
+      if(!prev||vv>prev.vv)best.set(key,{it,vv});
+    }
+    let top=null;for(const val of best.values())if(!top||val.vv>top.vv)top=val;
+    if(top&&!$('cm').hidden){
+      $('lv').hidden=false;$('lvi').src=top.it.thumb;$('lvn').textContent=top.it.name;
+      $('lvty').textContent=top.it.type==='kafel'?'Kafel':'Metlax';$('lvp').textContent=Math.round(top.vv*100)+'%';
+    }
+  }catch(e){}
+}
+function placeFrame(){const v=$('cv'),s=Math.round(Math.min(v.clientWidth,v.clientHeight)*.9);if(s>0)$('fr').style.width=$('fr').style.height=s+'px'}
+$('cv').onloadedmetadata=placeFrame;$('cv').onplaying=placeFrame;window.addEventListener('resize',placeFrame);
+$('camb').onclick=openCam;$('cx').onclick=closeCam;
+function doCapture(){const v=$('cv');if(!v.videoWidth)return;const z=parseFloat($('zm').value)||1;const s=Math.round(Math.min(v.videoWidth,v.videoHeight)*.9/z),c=document.createElement('canvas');c.width=c.height=s;c.getContext('2d').drawImage(v,(v.videoWidth-s)/2,(v.videoHeight-s)/2,s,s,0,0,s,s);c.toBlob(b=>{closeCam();search(new File([b],'kamera.jpg',{type:'image/jpeg'}))},'image/jpeg',.92)}
+$('cs').onclick=doCapture;
+$('lv').onclick=doCapture;
+render();migrate();renderHist();
+</script>
+</body>
+</html>
