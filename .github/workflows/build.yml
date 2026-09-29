@@ -1,0 +1,38 @@
+name: Build APK
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: AI modellərini və ONNX Runtime Web-i yüklə
+        run: |
+          set -e
+          mkdir -p app/src/main/assets/model app/src/main/assets/ort
+          curl -L --fail -o app/src/main/assets/model/model_quantized.onnx \
+            https://huggingface.co/Xenova/dinov2-small/resolve/main/onnx/model_quantized.onnx
+          curl -L --fail -o app/src/main/assets/model/clip_vision_quantized.onnx \
+            https://huggingface.co/Xenova/clip-vit-base-patch32/resolve/main/onnx/vision_model_quantized.onnx
+          npm install onnxruntime-web@1.18.0 --no-save --no-audit --no-fund
+          cp node_modules/onnxruntime-web/dist/ort.wasm.min.js app/src/main/assets/ort/
+          cp node_modules/onnxruntime-web/dist/ort-wasm.wasm app/src/main/assets/ort/
+          cp node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm app/src/main/assets/ort/
+          echo "--- assets/model ---"; ls -la app/src/main/assets/model
+          echo "--- assets/ort ---"; ls -la app/src/main/assets/ort
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: gradle/actions/setup-gradle@v4
+      - name: gradlew icra icazəsi
+        run: chmod +x ./gradlew
+      - name: Build
+        run: ./gradlew assembleDebug --stacktrace
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: plite-tap-apk
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/reports/**
+          if-no-files-found: warn
