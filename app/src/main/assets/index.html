@@ -462,7 +462,7 @@ async function search(file){
 $('pick').onchange=e=>{search(e.target.files[0]);e.target.value=''};
 let stream=null,anT=null,hist=[],anC=null,liveTick=0,liveBusy=false;
 $('zm').oninput=()=>{const z=parseFloat($('zm').value)||1;$('zmv').textContent=z.toFixed(1)+'x';$('cv').style.transform='scale('+z+')'};
-async function openCam(){$('cm').hidden=false;$('ce').textContent='';$('lv').hidden=true;$('zm').value=1;$('zmv').textContent='1.0x';$('cv').style.transform='scale(1)';lastQ=null;pendingCatalogImg=null;try{stream=await navigator.mediaDevices.getUserMedia({video:true});$('cv').srcObject=stream;hist=[];liveTick=0;clearInterval(anT);anT=setInterval(analyze,400)}catch(e){$('ce').textContent='Kamera açılmadı. Kameranın qoşulduğunu və icazə verildiyini yoxla.'}}
+async function openCam(){$('cm').hidden=false;$('ce').textContent='';$('lv').hidden=true;$('zm').value=1;$('zmv').textContent='1.0x';$('cv').style.transform='scale(1)';lastQ=null;pendingCatalogImg=null;try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});$('cv').srcObject=stream;hist=[];liveTick=0;clearInterval(anT);anT=setInterval(analyze,400)}catch(e){$('ce').textContent='Kamera açılmadı. Kameranın qoşulduğunu və icazə verildiyini yoxla.'}}
 function closeCam(){clearInterval(anT);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('cm').hidden=true;$('lv').hidden=true}
 function analyzePixels(d,S){
   const n=S*S,L=new Float32Array(n),q=[0,0,0,0],qn=[0,0,0,0],rr=[0,0,0],cr=[0,0,0];
