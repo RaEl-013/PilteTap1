@@ -141,6 +141,21 @@ select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--lin
     <div id="fr" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:3px solid #fff;border-radius:6px;box-shadow:0 0 0 9999px rgba(0,0,0,.55);pointer-events:none"></div>
   </div>
   <div class="row" style="width:100%;max-width:420px;gap:10px;align-items:center">
+    <span style="color:#fff;font-size:.85rem">Ölçü:</span>
+    <select id="tsz" style="flex:1;font:inherit;padding:8px;border-radius:8px;border:1.5px solid var(--line);background:var(--card);color:var(--ink)">
+      <optgroup label="Kafel">
+        <option value="60x120">60×120 sm</option>
+        <option value="30x60">30×60 sm</option>
+      </optgroup>
+      <optgroup label="Metlax">
+        <option value="60x60">60×60 sm</option>
+        <option value="50x50">50×50 sm</option>
+        <option value="20x60">20×60 sm</option>
+        <option value="30x60">30×60 sm</option>
+      </optgroup>
+    </select>
+  </div>
+  <div class="row" style="width:100%;max-width:420px;gap:10px;align-items:center">
     <span style="color:#fff;font-size:.85rem">Yaxınlaşdır</span>
     <input type="range" id="zm" min="1" max="3" step="0.1" value="1" style="flex:1">
     <span style="color:#fff;font-size:.85rem;min-width:36px;text-align:right" id="zmv">1.0x</span>
@@ -465,6 +480,24 @@ async function search(file){
   }catch(e){$('qs').textContent='';rs.innerHTML='<p class="msg">Xəta: '+e.message+'</p>'}
 }
 $('pick').onchange=e=>{search(e.target.files[0]);e.target.value=''};
+const SIZES={'60x120':[60,120],'30x60':[30,60],'60x60':[60,60],'50x50':[50,50],'20x60':[20,60]};
+function getRatio(){const v=SIZES[$('tsz').value]||[1,1];return Math.min(v[0],v[1])/Math.max(v[0],v[1])}
+function frameSize(cw,ch,r){
+  cw*=.92;ch*=.92;
+  let A={w:cw,h:cw*r};if(A.h>ch){A={w:ch/r,h:ch}}
+  let B={w:ch*r,h:ch};if(B.w>cw){B={w:cw,h:cw/r}}
+  return (A.w*A.h>=B.w*B.h)?A:B;
+}
+function videoCropRect(v,z){const r=getRatio(),{w,h}=frameSize(v.videoWidth,v.videoHeight,r);return{w:w/z,h:h/z}}
+function drawLetterboxed(v,cropW,cropH,outSize){
+  const vw=v.videoWidth,vh=v.videoHeight,c=document.createElement('canvas');c.width=c.height=outSize;
+  const x=c.getContext('2d');x.fillStyle='#c8c8c8';x.fillRect(0,0,outSize,outSize);
+  const scale=Math.min(outSize/cropW,outSize/cropH),dw=cropW*scale,dh=cropH*scale,dx=(outSize-dw)/2,dy=(outSize-dh)/2;
+  x.drawImage(v,(vw-cropW)/2,(vh-cropH)/2,cropW,cropH,dx,dy,dw,dh);
+  return c;
+}
+try{const sv=localStorage.getItem('plite_tsz');if(sv&&SIZES[sv])$('tsz').value=sv}catch(e){}
+$('tsz').onchange=()=>{try{localStorage.setItem('plite_tsz',$('tsz').value)}catch(e){}placeFrame()};
 let stream=null,anT=null,hist=[],anC=null,liveTick=0,liveBusy=false;
 $('zm').oninput=()=>{const z=parseFloat($('zm').value)||1;$('zmv').textContent=z.toFixed(1)+'x';$('cv').style.transform='scale('+z+')'};
 async function openCam(){$('cm').hidden=false;$('ce').textContent='';$('lv').hidden=true;$('zm').value=1;$('zmv').textContent='1.0x';$('cv').style.transform='scale(1)';lastQ=null;pendingCatalogImg=null;try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});$('cv').srcObject=stream;hist=[];liveTick=0;clearInterval(anT);anT=setInterval(analyze,400)}catch(e){$('ce').textContent='Kamera açılmadı. Kameranın qoşulduğunu və icazə verildiyini yoxla.'}}
@@ -503,9 +536,8 @@ function judge(a,peak,histLen){
 function analyze(){
   const v=$('cv');if(!v.videoWidth||$('cm').hidden)return;
   const z=parseFloat($('zm').value)||1;
-  const S=96,c=anC||(anC=document.createElement('canvas'));c.width=c.height=S;const x=c.getContext('2d',{willReadFrequently:true});
-  const s=Math.min(v.videoWidth,v.videoHeight)*.9/z;x.drawImage(v,(v.videoWidth-s)/2,(v.videoHeight-s)/2,s,s,0,0,S,S);
-  const a=analyzePixels(x.getImageData(0,0,S,S).data,S);
+  const S=96,{w:cw,h:ch}=videoCropRect(v,z),lc=drawLetterboxed(v,cw,ch,S);
+  const a=analyzePixels(lc.getContext('2d').getImageData(0,0,S,S).data,S);
   hist.push(a.lv);if(hist.length>12)hist.shift();
   const res=judge(a,Math.max(...hist),hist.length);
   const bad=res.some(r=>r[0]==='bad'),warn=res.some(r=>r[0]!=='ok'),col=bad?'#e74c3c':warn?'#f39c12':'#2ecc71';
@@ -514,14 +546,13 @@ function analyze(){
     res.map(r=>'<div style="color:'+(r[0]==='ok'?'#2ecc71':r[0]==='bad'?'#e74c3c':'#f39c12')+'">'+(r[0]==='ok'?'✓ ':'! ')+r[1]+'</div>').join('');
   $('cs').textContent=warn?'Yenə də çək':'Çək ✓';
   liveTick++;
-  if(!bad&&!liveBusy&&liveTick%3===0){liveBusy=true;liveMatch(v,s).finally(()=>{liveBusy=false})}
+  if(!bad&&!liveBusy&&liveTick%3===0){liveBusy=true;liveMatch(v,z).finally(()=>{liveBusy=false})}
 }
-async function liveMatch(v,s){
+async function liveMatch(v,z){
   try{
     const items=(await all()).filter(x=>x.v2);
     if(!items.length){$('lv').hidden=true;return}
-    const qc=document.createElement('canvas');qc.width=qc.height=256;
-    qc.getContext('2d').drawImage(v,(v.videoWidth-s)/2,(v.videoHeight-s)/2,s,s,0,0,256,256);
+    const{w:cw,h:ch}=videoCropRect(v,z),qc=drawLetterboxed(v,cw,ch,256);
     const emb=await dino(qc,0,CROPS[0]),qf=feat(qc,0);
     const best=new Map();
     for(const it of items){
@@ -537,7 +568,7 @@ async function liveMatch(v,s){
     }
   }catch(e){}
 }
-function placeFrame(){const v=$('cv'),s=Math.round(Math.min(v.clientWidth,v.clientHeight)*.9);if(s>0)$('fr').style.width=$('fr').style.height=s+'px'}
+function placeFrame(){const v=$('cv');if(!v.clientWidth)return;const f=frameSize(v.clientWidth,v.clientHeight,getRatio());$('fr').style.width=Math.round(f.w)+'px';$('fr').style.height=Math.round(f.h)+'px'}
 $('cv').onloadedmetadata=placeFrame;$('cv').onplaying=placeFrame;window.addEventListener('resize',placeFrame);
 let camMode='search',pendingCatalogImg=null;
 function openCamFor(mode){camMode=mode;openCam()}
@@ -547,8 +578,7 @@ $('cx').onclick=closeCam;
 function doCapture(){
   const v=$('cv');if(!v.videoWidth)return;
   const z=parseFloat($('zm').value)||1;
-  const s=Math.round(Math.min(v.videoWidth,v.videoHeight)*.9/z),c=document.createElement('canvas');c.width=c.height=s;
-  c.getContext('2d').drawImage(v,(v.videoWidth-s)/2,(v.videoHeight-s)/2,s,s,0,0,s,s);
+  const{w:cw,h:ch}=videoCropRect(v,z),c=drawLetterboxed(v,cw,ch,448);
   if(camMode==='catalog'){
     closeCam();
     pendingCatalogImg=c;
