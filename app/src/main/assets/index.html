@@ -46,8 +46,13 @@ select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--lin
 </head>
 <body>
 <main>
-  <h1>Plitə tap</h1>
-  <p class="sub">Kafel və ya metlax şəkli çək, kataloqdan ən uyğun modeli tapım.</p>
+  <div class="row" style="gap:10px;margin-bottom:2px">
+    <div style="width:40px;height:40px;border-radius:10px;overflow:hidden;flex:none;box-shadow:0 0 0 1px var(--line)">
+      <svg viewBox="0 0 512 512" width="40" height="40" role="img" aria-label="Keramo Bazar"><rect width="512" height="512" fill="#fff"/><rect x="106" y="106" width="300" height="300" fill="#181818" transform="rotate(45 256 256)"/><text x="256" y="292" font-family="DejaVu Sans, Arial, sans-serif" font-weight="bold" font-size="150" fill="#fff" text-anchor="middle">KB</text></svg>
+    </div>
+    <h1 style="margin:0">Plitə tap</h1>
+  </div>
+  <p class="sub">Şəkli çək, uyğun modeli tap.</p>
   <p class="msg" id="mig" hidden></p>
 
   <nav role="tablist">
@@ -58,7 +63,7 @@ select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--lin
   <section id="p1">
     <div class="panel">
       <div class="row" style="margin-bottom:12px">
-        <label for="ft" class="msg" style="margin:0">Axtarış növü:</label>
+        <label for="ft" class="msg" style="margin:0">Növ:</label>
         <select id="ft"><option value="">Hamısı</option><option value="kafel">Kafel</option><option value="metlax">Metlax</option></select>
       </div>
       <button class="btn" id="camb">Kamera ilə çək</button>
@@ -77,16 +82,16 @@ select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--lin
   <section id="p2" hidden>
     <div class="panel">
       <div class="row" style="margin-bottom:12px">
-        <label for="nt" class="msg" style="margin:0">Yüklənən şəkillər:</label>
+        <label for="nt" class="msg" style="margin:0">Növ:</label>
         <select id="nt"><option value="kafel">Kafel</option><option value="metlax">Metlax</option></select>
       </div>
       <button class="btn" id="ccamb" style="margin-top:0">Kamera ilə çək</button>
       <label class="btn alt">Şəkilləri əlavə et<input type="file" id="add" accept="image/jpeg,.jpg,.jpeg" multiple></label>
-      <p class="msg" id="ast">JPEG (.jpg) fayllarını birlikdə seçə bilərsən. Model adı fayl adından götürülür. Şəkillər yalnız bu cihazda saxlanılır.</p>
+      <p class="msg" id="ast">Yalnız JPEG. Ad fayldan götürülür.</p>
     </div>
     <div class="panel">
-      <button class="btn alt" id="tune" style="margin-top:0">Dəqiqliyi yoxla və avto-tənzimlə</button>
-      <p class="msg" id="tst">Kataloqdakı şəkilləri işığı, kəsimi və bulanıqlığı dəyişib özü ilə müqayisə edir, ən yaxşı çəkiləri seçir və qarışan modelləri göstərir. Təxminən 1-2 dəqiqə çəkir.</p>
+      <button class="btn alt" id="tune" style="margin-top:0">Dəqiqliyi yoxla</button>
+      <p class="msg" id="tst">Ən yaxşı tənzimi özü seçir (1-2 dəq).</p>
       <div class="msg" id="tres" style="white-space:pre-wrap"></div>
     </div>
     <div class="panel">
@@ -95,19 +100,19 @@ select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--lin
         <select id="cf"><option value="">Hamısı</option><option value="kafel">Kafel</option><option value="metlax">Metlax</option></select>
       </div>
       <div class="row" style="margin-top:10px">
-        <button class="btn alt" id="csel" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem">Görünənləri seç</button>
+        <button class="btn alt" id="csel" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem">Hamısını seç</button>
         <button class="btn alt" id="cnsel" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem" disabled>İmtina et</button>
-        <button class="btn alt" id="dsel" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem;color:#c0392b;border-color:#c0392b" disabled>Seçilmişləri sil (0)</button>
-        <button class="btn alt" id="dall" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem;color:#c0392b;border-color:#c0392b">Hamısını sil</button>
+        <button class="btn alt" id="dsel" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem;color:#c0392b;border-color:#c0392b" disabled>Sil (0)</button>
+        <button class="btn alt" id="dall" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem;color:#c0392b;border-color:#c0392b">Kataloqu sil</button>
       </div>
-      <p class="msg" style="margin-bottom:0">Şəklin üstünə basıb adını, növünü və ya şəklini dəyişə bilərsiniz.</p>
+      <p class="msg" style="margin-bottom:0">Redaktə üçün şəklə bas.</p>
     </div>
     <div class="grid" id="list"></div>
   </section>
 </main>
 <div id="cc" hidden style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:8;display:flex;align-items:center;justify-content:center;padding:16px">
   <div class="panel" style="max-width:380px;width:100%;margin:0">
-    <div class="q"><img id="cci" alt="" style="width:96px;height:96px"><div style="flex:1"><p class="msg" style="margin:0">Yeni model — kataloqa əlavə et</p></div></div>
+    <div class="q"><img id="cci" alt="" style="width:96px;height:96px"><div style="flex:1"><p class="msg" style="margin:0">Yeni model</p></div></div>
     <p class="msg" style="margin:12px 0 4px">Model adı</p>
     <input id="ccn" type="text" placeholder="Məs: K-101" style="width:100%;font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink)">
     <div class="row" style="margin:10px 0"><span class="msg" style="margin:0">Növ:</span><select id="cct"><option value="kafel">Kafel</option><option value="metlax">Metlax</option></select></div>
@@ -121,7 +126,7 @@ select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--lin
     <p class="msg" style="margin:12px 0 4px">Model adı</p>
     <input id="en" type="text" style="width:100%;font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink)">
     <div class="row" style="margin:10px 0"><span class="msg" style="margin:0">Növ:</span><select id="et"><option value="kafel">Kafel</option><option value="metlax">Metlax</option></select></div>
-    <label class="row msg" style="margin:6px 0"><input type="checkbox" id="eall"> Eyni adlı bütün şəkillərə tətbiq et</label>
+    <label class="row msg" style="margin:6px 0"><input type="checkbox" id="eall"> Eyni adlı hamısına tətbiq et</label>
     <div class="row"><button class="btn" id="esv" style="flex:1;width:auto">Yadda saxla</button><button class="btn alt" id="ecl" style="width:auto;margin:0">Bağla</button></div>
     <button class="btn alt" id="edl" style="color:#c0392b;border-color:#c0392b">Bu şəkli sil</button>
   </div>
@@ -146,7 +151,7 @@ select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--lin
     <div style="flex:1;min-width:0"><div style="color:#fff;font-weight:700;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="lvn"></div><div style="color:#cfd6da;font-size:.78rem" id="lvty"></div></div>
     <div style="color:#8be28b;font-weight:800;font-size:1.05rem;flex:none" id="lvp"></div>
   </div>
-  <div style="color:#cfd6da;font-size:.8rem;max-width:420px;text-align:center">Standart: işıq normal, kölgəsiz, kəskin; kamera plitəyə paralel, plitə çərçivəni doldursun (təxminən 20-40 sm, plitənin ölçüsündən asılıdır).</div>
+  <div style="color:#cfd6da;font-size:.8rem;max-width:420px;text-align:center">İşıq yaxşı, paralel tut, çərçivəni doldur.</div>
   <div class="row"><button class="btn" id="cs" style="width:auto;padding:12px 28px">Çək</button><button class="btn alt" id="cx" style="width:auto;margin:0;padding:12px 28px;color:#fff;border-color:#fff">Bağla</button></div>
   <div class="msg" id="ce" style="color:#fff"></div>
 </div>
@@ -342,7 +347,7 @@ function showHist(entry){
   t.append(b,tg);
   const p=document.createElement('div');p.className='pct';p.textContent=entry.pct+'%';
   d.append(im,t,p);rs.append(d);
-  const note=document.createElement('p');note.className='msg';note.textContent='Bu, keçmiş axtarışın yalnız ən uyğun nəticəsidir. Dəqiq nəticə üçün şəkli təzədən çək.';rs.append(note);
+  const note=document.createElement('p');note.className='msg';note.textContent='Dəqiq nəticə üçün şəkli təzədən çək.';rs.append(note);
 }
 /* ---------- UI ---------- */
 function tab(n){for(const i of [1,2]){$('p'+i).hidden=i!==n;$('t'+i).setAttribute('aria-selected',i===n)}if(n===2)render()}
@@ -350,7 +355,7 @@ $('t1').onclick=()=>tab(1);$('t2').onclick=()=>tab(2);
 
 let sel=new Set(),visible=[],cur=null,newImg=null;
 function ask(m){return new Promise(r=>{$('am').textContent=m;$('ask').hidden=false;const f=v=>{$('ask').hidden=true;$('ay').onclick=$('an').onclick=null;r(v)};$('ay').onclick=()=>f(true);$('an').onclick=()=>f(false)})}
-function upBulk(){$('dsel').textContent='Seçilmişləri sil ('+sel.size+')';$('dsel').disabled=!sel.size;$('cnsel').disabled=!sel.size}
+function upBulk(){$('dsel').textContent='Sil ('+sel.size+')';$('dsel').disabled=!sel.size;$('cnsel').disabled=!sel.size}
 function edit(it){cur=it;newImg=null;$('ei').src=it.thumb;$('en').value=it.name;$('et').value=it.type;$('eall').checked=false;$('em').textContent='';$('ed').hidden=false}
 async function render(){
   const all_=await all();$('cnt').textContent=all_.length?'('+all_.length+')':'';
@@ -374,10 +379,10 @@ $('cq').oninput=render;$('cf').onchange=render;
 $('csel').onclick=()=>{const allSel=visible.length&&visible.every(i=>sel.has(i.id));visible.forEach(i=>allSel?sel.delete(i.id):sel.add(i.id));render()};
 $('cnsel').onclick=()=>{sel.clear();render()};
 $('dsel').onclick=async()=>{if(!sel.size)return;if(!await ask(sel.size+' şəkil silinsin?'))return;for(const id of [...sel])await del(id);sel.clear();render()};
-$('dall').onclick=async()=>{const a=await all();if(!a.length)return;if(!await ask('Bütün kataloq ('+a.length+' şəkil) silinsin? Bu geri qaytarılmır.'))return;for(const x of a)await del(x.id);sel.clear();render()};
+$('dall').onclick=async()=>{const a=await all();if(!a.length)return;if(!await ask('Kataloq ('+a.length+') silinsin? Geri qaytarılmır.'))return;for(const x of a)await del(x.id);sel.clear();render()};
 $('ecl').onclick=()=>{$('ed').hidden=true};
 $('ef').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
-  try{const img=await load(f);newImg=squareCanvas(img,448);$('ei').src=newImg.toDataURL('image/jpeg',.8);$('em').textContent='Yeni şəkil seçildi. «Yadda saxla» düyməsini basın.'}
+  try{const img=await load(f);newImg=squareCanvas(img,448);$('ei').src=newImg.toDataURL('image/jpeg',.8);$('em').textContent='Yeni şəkil seçildi.'}
   catch(err){$('em').textContent='Şəkil açılmadı.'}};
 $('esv').onclick=async()=>{
   const name=$('en').value.trim();if(!name){$('em').textContent='Model adı boş ola bilməz.';return}
@@ -422,7 +427,7 @@ async function search(file){
   try{
     const items=(await all()).filter(x=>x.v2&&(!$('ft').value||x.type===$('ft').value));
     const img=await load(file),c=squareCanvas(img,448);lastQ=c;$('qi').src=c.toDataURL('image/jpeg',.8);
-    if(!items.length){$('qs').textContent='';rs.innerHTML='<p class="msg">Kataloqda uyğun şəkil yoxdur. Əvvəlcə «Kataloq» bölməsinə plitə şəkilləri əlavə et.</p>';return}
+    if(!items.length){$('qs').textContent='';rs.innerHTML='<p class="msg">Kataloq boşdur. Əvvəlcə şəkil əlavə et.</p>';return}
     const qf=[0,1,2,3].map(r=>feat(c,r));
     const qe=[];for(let r=0;r<4;r++)qe.push([await dino(c,r,CROPS[0]),await dino(c,r,CROPS[1])]);
     const best=new Map();
@@ -437,13 +442,13 @@ async function search(file){
       if(!cur)best.set(key,{it,s,n:1});else{cur.n++;if(s>cur.s){cur.it=it;cur.s=s}}
     }
     const sc=[...best.values()].sort((a,b)=>b.s-a.s).slice(0,3);
-    $('qs').textContent=best.size+' model, '+items.length+' şəkil arasında axtarıldı';
+    $('qs').textContent=best.size+' model tapıldı';
     sc.forEach((r,i)=>{
       const d=document.createElement('div');d.className='res'+(i===0?' top':'');
       const im=new Image();im.src=r.it.thumb;im.alt=r.it.name;
       const t=document.createElement('div');const b=document.createElement('b');b.textContent=r.it.name;
       const tg=document.createElement('span');tg.className='tag';tg.textContent=(r.it.type==='kafel'?'Kafel':'Metlax')+' · '+r.n+' şəkil';
-      const ok=document.createElement('button');ok.className='btn alt';ok.style.cssText='padding:8px;font-size:.9rem;margin-top:8px';ok.textContent='Düzgündür, bu şəkli də əlavə et';
+      const ok=document.createElement('button');ok.className='btn alt';ok.style.cssText='padding:8px;font-size:.9rem;margin-top:8px';ok.textContent='Düzgündür, əlavə et';
       ok.onclick=()=>addQuery(r.it.name,r.it.type,ok);
       t.append(b,tg,ok);
       const p=document.createElement('div');p.className='pct';p.textContent=Math.round(r.s*100)+'%';
@@ -452,7 +457,7 @@ async function search(file){
     pushHist(c,sc);
     const names=[...best.values()].map(v=>v.it).sort((a,b)=>a.name.localeCompare(b.name));
     const w=document.createElement('div');w.className='row';w.style.cssText='margin-top:12px;padding-top:12px;border-top:1px solid var(--line)';
-    const lb=document.createElement('span');lb.className='msg';lb.style.margin='0';lb.textContent='Düzgün model başqadırsa:';
+    const lb=document.createElement('span');lb.className='msg';lb.style.margin='0';lb.textContent='Başqadırsa:';
     const sel=document.createElement('select');names.forEach((n,i)=>{const o=document.createElement('option');o.value=i;o.textContent=n.name+' ('+(n.type==='kafel'?'Kafel':'Metlax')+')';sel.append(o)});
     const bt=document.createElement('button');bt.className='btn alt';bt.style.cssText='width:auto;margin:0;padding:8px 14px;font-size:.9rem';bt.textContent='Bu modelə əlavə et';
     bt.onclick=()=>{const n=names[sel.value];addQuery(n.name,n.type,bt)};
@@ -484,15 +489,15 @@ function analyzePixels(d,S){
 }
 function judge(a,peak,histLen){
   const r=[];
-  if(a.mean<70)r.push(['bad','İşıq çox azdır, daha işıqlı yerdə çək']);
-  else if(a.mean<95)r.push(['warn','İşıq azdır, işığı artır']);
-  else if(a.mean>200)r.push(['warn','İşıq çox güclüdür, işığı azalt']);
-  else if(a.bright>.08)r.push(['warn','Parıltı (ağ ləkə) var, kameranı bir az əyib işıqdan uzaqlaşdır']);
-  else if(a.dark>.08)r.push(['warn','Çox qaranlıq hissələr var']);
-  else r.push(['ok','İşıq normaldır']);
-  r.push(a.ev>.35?['warn','Kölgə və ya qeyri-bərabər işıq var']:['ok','Kölgə yoxdur']);
-  r.push(histLen>=6&&peak>25&&a.lv<.45*peak?['warn','Şəkil bulanıqdır, kameranı sabit tut və məsafəni tənzimlə']:['ok','Şəkil kəskindir']);
-  r.push(a.dist>60?['warn','Plitə çərçivəni doldurmur ola bilər (təxmini), yaxınlaş']:['ok','Məsafə uyğundur (təxmini)']);
+  if(a.mean<70)r.push(['bad','İşıq azdır']);
+  else if(a.mean<95)r.push(['warn','İşıq zəifdir']);
+  else if(a.mean>200)r.push(['warn','İşıq çoxdur']);
+  else if(a.bright>.08)r.push(['warn','Parıltı var']);
+  else if(a.dark>.08)r.push(['warn','Qaranlıq sahə var']);
+  else r.push(['ok','İşıq yaxşı']);
+  r.push(a.ev>.35?['warn','Kölgə var']:['ok','Kölgə yox']);
+  r.push(histLen>=6&&peak>25&&a.lv<.45*peak?['warn','Bulanıqdır, sabit tut']:['ok','Kəskindir']);
+  r.push(a.dist>60?['warn','Yaxınlaş']:['ok','Məsafə yaxşı']);
   return r;
 }
 function analyze(){
