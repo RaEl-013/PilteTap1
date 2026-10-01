@@ -94,13 +94,14 @@ jobs:
 
       - name: APK qur (versiya = run nömrəsi)
         env:
-          GRADLE_OPTS: -Xmx5g 
           KERAMO_STORE_PASSWORD: ${{ secrets.KERAMO_KEYSTORE_PASSWORD || 'keramo123' }}
           KERAMO_KEY_PASSWORD: ${{ secrets.KERAMO_KEY_PASSWORD || 'keramo123' }}
           KERAMO_KEY_ALIAS: ${{ secrets.KERAMO_KEY_ALIAS || 'keramo' }}
         run: |
           chmod +x gradlew
+          # useAndroidX həm fayldan, həm də buradan - ikiqat təminat
           ./gradlew assembleRelease \
+            -Pandroid.useAndroidX=true \
             -PversionCode=${{ github.run_number }} \
             -PversionName=v${{ github.run_number }}
 
