@@ -41,11 +41,16 @@ select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--lin
 .it img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
 .it div{padding:6px 8px;font-size:.85rem;word-break:break-word}
 .it button{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:16px;cursor:pointer}
+.why{font-size:.78rem;color:var(--mut);margin-top:4px;line-height:1.5}
+.why b{font-weight:700}
+.whybar{display:inline-block;background:var(--acc);opacity:.55;height:7px;border-radius:4px;vertical-align:middle;margin:0 4px}
+#thm{position:absolute;right:16px;top:16px;width:40px;height:40px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-size:18px;cursor:pointer;z-index:5}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
 <main>
+  <button id="thm" title="Tema dəyiş" aria-label="Tema">🌙</button>
   <div class="row" style="gap:10px;margin-bottom:2px">
     <div style="width:40px;height:40px;border-radius:10px;overflow:hidden;flex:none;box-shadow:0 0 0 1px var(--line)">
       <svg viewBox="0 0 512 512" width="40" height="40" role="img" aria-label="Keramo Bazar"><rect width="512" height="512" fill="#fff"/><rect x="106" y="106" width="300" height="300" fill="#181818" transform="rotate(45 256 256)"/><text x="256" y="292" font-family="DejaVu Sans, Arial, sans-serif" font-weight="bold" font-size="150" fill="#fff" text-anchor="middle">KB</text></svg>
@@ -90,6 +95,13 @@ select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--lin
       <p class="msg" id="ast">Yalnız JPEG. Ad fayldan götürülür.</p>
     </div>
     <div class="panel">
+      <div class="row">
+        <button class="btn alt" id="bexp" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem">⬇ Ehtiyat nüsxə</button>
+        <label class="btn alt" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem">⬆ Bərpa et<input type="file" id="bfile" accept=".json,application/json"></label>
+      </div>
+      <p class="msg" style="margin:6px 0 0;font-size:.85rem">Kataloqu fayl kimi saxla / geri yüklə. Yeni telefonda kataloqu itirmə.</p>
+    </div>
+    <div class="panel">
       <button class="btn alt" id="tune" style="margin-top:0">Dəqiqliyi yoxla</button>
       <p class="msg" id="tst">Ən yaxşı tənzimi özü seçir (1-2 dəq).</p>
       <div class="msg" id="tres" style="white-space:pre-wrap"></div>
@@ -101,7 +113,7 @@ select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--lin
       </div>
       <div class="row" style="margin-top:10px">
         <button class="btn alt" id="csel" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem">Hamısını seç</button>
-        <button class="btn alt" id="cnsel" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem" disabled>İmtina et</button>
+        <button class="btn alt" id="cnsel" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem" disabled>Seçimi ləğv et</button>
         <button class="btn alt" id="dsel" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem;color:#c0392b;border-color:#c0392b" disabled>Sil (0)</button>
         <button class="btn alt" id="dall" style="width:auto;margin:0;padding:8px 12px;font-size:.9rem;color:#c0392b;border-color:#c0392b">Kataloqu sil</button>
       </div>
@@ -134,6 +146,11 @@ select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--lin
 <div id="ask" hidden style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10;display:flex;align-items:center;justify-content:center;padding:16px">
   <div class="panel" style="max-width:360px;width:100%;margin:0"><p id="am" style="margin-top:0"></p>
     <div class="row"><button class="btn" id="ay" style="flex:1;width:auto;background:#c0392b;color:#fff">Bəli, sil</button><button class="btn alt" id="an" style="width:auto;margin:0">Xeyr</button></div></div>
+</div>
+<div id="ver" hidden style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10;display:flex;align-items:center;justify-content:center;padding:16px">
+  <div class="panel" style="max-width:380px;width:100%;margin:0"><b>Yeniliklər</b>
+    <div id="verl" class="msg" style="margin:10px 0;line-height:1.7"></div>
+    <button class="btn" id="verok" style="padding:12px">Bağla</button></div>
 </div>
 <div id="lb" hidden style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:11;display:flex;align-items:center;justify-content:center;padding:20px">
   <img id="lbi" alt="" style="max-width:100%;max-height:100%;border-radius:10px">
@@ -176,22 +193,54 @@ select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--lin
 <script src="ocr/tesseract.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
+const APP_VERSION='v3.0';
 let ipcRenderer=null;try{ipcRenderer=require('electron').ipcRenderer}catch(e){}
+/* ---------- Tema (avtomatik / açıq / qaranlıq) ---------- */
+const THEMES=['auto','light','dark'],TH_ICONS={auto:'🌗',light:'☀️',dark:'🌙'};
+let thMode='auto';try{const t=localStorage.getItem('plite_theme');if(THEMES.includes(t))thMode=t}catch(e){}
+function applyTheme(){
+  const eff=thMode==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):thMode;
+  document.documentElement.dataset.theme=eff;
+  $('thm').textContent=TH_ICONS[thMode];
+}
+$('thm').onclick=()=>{thMode=THEMES[(THEMES.indexOf(thMode)+1)%3];try{localStorage.setItem('plite_theme',thMode)}catch(e){}applyTheme()};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(thMode==='auto')applyTheme()});
+applyTheme();
+/* ---------- Yeniliklər (changelog) ---------- */
+const CHANGELOG=[
+ 'Ehtiyat nüsxə: kataloqu fayl kimi saxla / bərpa et',
+ 'Nəticədə izah: DINO / CLIP / rəng uyğunluğu ayrıca göstərilir',
+ 'OCR: azərbaycan + rus etiketləri də oxunur',
+ 'Sürət: CLIP modulu indi arxa planda yüklənir',
+ 'Qaranlıq rejim: başlıqdakı 🌙 düyməsi',
+ '6 bucaq çəkiliş: artıq bir model kimi birləşir (dəqiqlik ↑)',
+ 'Batareya qənaəti: ekran söndükdə tanıma dayanır'
+];
+function showVer(){
+  let seen='';try{seen=localStorage.getItem('plite_ver')||''}catch(e){}
+  if(seen===APP_VERSION)return;
+  $('verl').innerHTML=CHANGELOG.map(c=>'• '+c).join('<br>')+'<br><br><b>'+APP_VERSION+'</b> versiyası';
+  $('ver').hidden=false;
+  $('verok').onclick=()=>{$('ver').hidden=true;try{localStorage.setItem('plite_ver',APP_VERSION)}catch(e){}};
+  try{localStorage.setItem('plite_ver',APP_VERSION)}catch(e){}
+}
 /* ---------- ONNX Runtime Web (Electron olmayan mühitlər üçün, məs. Android) ---------- */
-let ortReady=null;
+let sdSess=null,clipSess=null,clipP=null;
 async function ensureOrt(){
-  if(ortReady)return ortReady;
+  if(sdSess)return sdSess;
   if(typeof ort==='undefined')throw new Error('ONNX Runtime Web tapılmadı (ort/ qovluğu yoxdur)');
   ort.env.wasm.numThreads=1;ort.env.wasm.simd=true;ort.env.wasm.wasmPaths='ort/';
-  const [sd,sc]=await Promise.all([
-    ort.InferenceSession.create('model/model_quantized.onnx'),
-    ort.InferenceSession.create('model/clip_vision_quantized.onnx')
-  ]);
-  ortReady={sd,sc};return ortReady;
+  sdSess=await ort.InferenceSession.create('model/model_quantized.onnx');
+  return sdSess;
+}
+function ensureClip(){ // arxa planda: açılışı sürətləndirir
+  if(clipSess||clipP)return clipP;
+  clipP=(async()=>{try{clipSess=await ort.InferenceSession.create('model/clip_vision_quantized.onnx')}catch(e){clipP=null}})();
+  return clipP;
 }
 function unitArr(v){let n=0;for(let i=0;i<v.length;i++)n+=v[i]*v[i];n=Math.sqrt(n)||1;const o=new Float32Array(v.length);for(let i=0;i<v.length;i++)o[i]=v[i]/n;return o}
 async function embedWeb(f,g){
-  const{sd,sc}=await ensureOrt();
+  const sd=await ensureOrt();
   const od=await sd.run({pixel_values:new ort.Tensor('float32',f,[1,3,224,224])});
   const h=od.last_hidden_state,dd=h.data,N=h.dims[1],D=h.dims[2];
   const cls=dd.slice(0,D),mean=new Float32Array(D);
@@ -199,8 +248,11 @@ async function embedWeb(f,g){
   for(let j=0;j<D;j++)mean[j]/=(N-1);
   const uc=unitArr(cls),um=unitArr(mean),dvec=new Array(D*2);
   for(let j=0;j<D;j++){dvec[j]=uc[j]/Math.SQRT2;dvec[D+j]=um[j]/Math.SQRT2}
-  const oc=await sc.run({pixel_values:new ort.Tensor('float32',g,[1,3,224,224])});
-  return{d:dvec,c:Array.from(unitArr(oc.image_embeds.data))};
+  let c=null;
+  if(!clipSess)await ensureClip(); // ilk çəkilişdə lazımdırsa gözlə
+  if(clipSess){const oc=await clipSess.run({pixel_values:new ort.Tensor('float32',g,[1,3,224,224])});c=Array.from(unitArr(oc.image_embeds.data))}
+  else{c=new Array(512).fill(0)} // CLIP hələ yüklənməyib: sıfır vektor (balda iştirak etmir)
+  return{d:dvec,c:c};
 }
 async function embed(f,g){return ipcRenderer?await ipcRenderer.invoke('embed',f,g):await embedWeb(f,g)}
 /* ---------- OCR (etiket oxumaq) ---------- */
@@ -208,14 +260,17 @@ let ocrWorker=null;
 async function ensureOcr(){
   if(ocrWorker)return ocrWorker;
   if(typeof Tesseract==='undefined')throw new Error('OCR modulu tapılmadı');
-  ocrWorker=await Tesseract.createWorker('eng',1,{workerPath:'ocr/worker.min.js',corePath:'ocr/tesseract-core-simd-lstm.js',langPath:'ocr/',gzip:false});
+  ocrWorker=await Tesseract.createWorker(['eng','aze','rus'],1,{workerPath:'ocr/worker.min.js',corePath:'ocr/tesseract-core-simd-lstm.js',langPath:'ocr/',gzip:false});
   return ocrWorker;
+}
+function fixOcr(s){ // tez-tez səhv oxunan simvollar
+  return s.replace(/\|/g,'I').replace(/§/g,'S').replace(/«/g,'').replace(/»/g,'')
 }
 async function readLabel(canvas){
   try{
     const w=await ensureOcr(),{data:{text}}=await w.recognize(canvas);
-    const t=(text||'').trim();if(!t)return'';
-    const m=t.match(/[A-Za-z0-9][A-Za-z0-9\-\.\/]{2,}/g);
+    const t=fixOcr((text||'').trim());if(!t)return'';
+    const m=t.match(/[A-Za-zА-Яа-яЁё0-9][A-Za-zА-Яа-яЁё0-9\-\.\/]{2,}/g);
     if(m&&m.length){return m.sort((a,b)=>b.length-a.length)[0]}
     return t.split('\n')[0].trim();
   }catch(e){return''}
@@ -227,10 +282,9 @@ function db(){if(dbp)return dbp;dbp=new Promise((res,rej)=>{try{const r=indexedD
 async function all(){try{const d=await db();return await new Promise((res,rej)=>{const q=d.transaction('items').objectStore('items').getAll();q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}catch(e){return mem}}
 async function put(o){try{const d=await db();await new Promise((res,rej)=>{const q=d.transaction('items','readwrite').objectStore('items').add(o);q.onsuccess=res;q.onerror=()=>rej(q.error)})}catch(e){o.id=Date.now()+Math.random();mem.push(o)}}
 async function del(id){try{const d=await db();await new Promise((res,rej)=>{const q=d.transaction('items','readwrite').objectStore('items').delete(id);q.onsuccess=res;q.onerror=()=>rej(q.error)})}catch(e){mem=mem.filter(x=>x.id!==id)}}
-
 async function upd(o){try{const d=await db();await new Promise((res,rej)=>{const q=d.transaction('items','readwrite').objectStore('items').put(o);q.onsuccess=res;q.onerror=()=>rej(q.error)})}catch(e){mem=mem.map(x=>x.id===o.id?o:x)}}
 function loadUrl(u){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('Şəkil açılmadı'));i.src=u})}
-/* ---------- DINOv2 embedding (main prosesdə işləyir) ---------- */
+/* ---------- DINOv2 embedding ---------- */
 const CROPS=[[0,0,1],[.2,.2,.6],[0,0,.55],[.45,0,.55],[0,.45,.55],[.45,.45,.55]];
 async function dino(src,rot,cr){
   cr=cr||CROPS[0];
@@ -241,6 +295,22 @@ async function dino(src,rot,cr){
   return await embed(f,g);
 }
 async function itemEmbs(c){const o=[];for(const cr of CROPS)o.push(await dino(c,0,cr));return o}
+/* Seriya (6 bucaq) üçün orta embedding — bir model kimi birləşir */
+function avgEmbs(list){
+  const D=list[0].d.length,C=list[0].c.length;
+  const d=new Array(D).fill(0),c=new Array(C).fill(0);
+  for(const e of list)for(let i=0;i<D;i++)d[i]+=e.d[i]/list.length;
+  for(const e of list)for(let i=0;i<C;i++)c[i]+=e.c[i]/list.length;
+  let n=0;for(const v of d)n+=v*v;n=Math.sqrt(n)||1;for(let i=0;i<D;i++)d[i]/=n;
+  n=0;for(const v of c)n+=v*v;n=Math.sqrt(n)||1;for(let i=0;i<C;i++)c[i]/=n;
+  return{d,c};
+}
+function avgFeats(list){
+  const out={g:[],h:[],o:[]};
+  for(const k of['g','h','o']){const L=list[0].f[k].length,a=new Array(L).fill(0);
+    for(const it of list)for(let i=0;i<L;i++)a[i]+=it.f[k][i]/list.length;out[k]=a}
+  return out;
+}
 function dot(a,b){let s=0;for(let i=0;i<a.length;i++)s+=a[i]*b[i];return s}
 async function migrate(){
   const items=(await all()).filter(x=>!x.v2);if(!items.length)return;
@@ -309,19 +379,29 @@ $('ccs').onclick=async()=>{
   if(!catalogShots.length)return;
   const btn=$('ccs');btn.disabled=true;
   try{
-    const type=$('cct').value;
+    const type=$('cct').value,embList=[],featList=[];
     for(let i=0;i<catalogShots.length;i++){
       $('ccm').textContent='Şəkil işlənir: '+(i+1)+' / '+catalogShots.length;
       const c=catalogShots[i];
-      await put({name,type,thumb:c.toDataURL('image/jpeg',.8),f:feat(c,0),v2:await itemEmbs(c)});
+      embList.push(await itemEmbs(c));featList.push({f:feat(c,0)});
     }
+    // 6 bucaq -> orta embedding (bir model kimi)
+    const crops=embList[0].length,v2=[];
+    for(let ci=0;ci<crops;ci++)v2.push(avgEmbs(embList.map(e=>e[ci])));
+    await put({name,type,thumb:catalogShots[0].toDataURL('image/jpeg',.8),f:avgFeats(featList),v2:v2});
     catalogShots=[];$('cc').hidden=true;render();
   }catch(e){$('ccm').textContent='Xəta: '+e.message}
   finally{btn.disabled=false}
 };
 /* ---------- image features ---------- */
 function load(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),i=new Image();i.onload=()=>{URL.revokeObjectURL(u);res(i)};i.onerror=()=>rej(new Error('Şəkil açılmadı'));i.src=u})}
-function squareCanvas(img,size){const c=document.createElement('canvas');c.width=c.height=size;const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height,m=Math.min(w,h);c.getContext('2d').drawImage(img,(w-m)/2,(h-m)/2,m,m,0,0,size,size);return c}
+function squareCanvas(img,size){ // letterbox: kənar kəsilmir, boşluq boz doldurulur (kamera ilə eyni)
+  const c=document.createElement('canvas');c.width=c.height=size;
+  const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+  const x=c.getContext('2d');x.fillStyle='#c8c8c8';x.fillRect(0,0,size,size);
+  const sc=Math.min(size/w,size/h),dw=w*sc,dh=h*sc;
+  x.drawImage(img,(size-dw)/2,(size-dh)/2,dw,dh);return c;
+}
 function feat(src,rot){
   const S=48,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d',{willReadFrequently:true});
   x.translate(S/2,S/2);x.rotate(rot*Math.PI/2);x.drawImage(src,-S/2,-S/2,S,S);
@@ -349,7 +429,34 @@ function sim(a,b){
   let s3=0;for(let i=0;i<72;i++)s3+=a.o[i]*b.o[i];
   return .4*s1+.3*s2+.3*Math.max(0,s3);
 }
-
+/* ---------- Ehtiyat nüsxə (export / import) ---------- */
+function b64u(s){return btoa(unescape(encodeURIComponent(s)))}
+async function exportBackup(){
+  const its=await all();
+  if(!its.length){alert('Kataloq boşdur.');return}
+  const data={app:'plite-tap',format:1,ts:Date.now(),items:its.map(({id,...rest})=>rest)};
+  const json=JSON.stringify(data),fname='keramo-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  if(window.Keramo&&Keramo.saveBackup){Keramo.saveBackup(b64u(json),fname);return}
+  const a=document.createElement('a');
+  a.href='data:application/json;base64,'+b64u(json);a.download=fname;
+  document.body.appendChild(a);a.click();a.remove();
+}
+$('bexp').onclick=exportBackup;
+$('bfile').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{
+    const data=JSON.parse(await f.text());
+    const items=data.items||data;if(!Array.isArray(items))throw new Error('fayl düzgün deyil');
+    let ok=0;
+    for(const it of items){
+      if(!it.name||!it.thumb||!it.f||!it.v2)continue;
+      await put({name:String(it.name),type:it.type==='metlax'?'metlax':'kafel',thumb:it.thumb,f:it.f,v2:it.v2});ok++;
+    }
+    render();
+    const msg=ok+' model bərpa olundu.';
+    if(window.Keramo&&Keramo.toast)Keramo.toast(msg);else alert(msg);
+  }catch(err){alert('Bərpa xətası: '+err.message)}
+};
 /* ---------- axtarış tarixçəsi ---------- */
 function smallThumb(src,size){const c=document.createElement('canvas');c.width=c.height=size;c.getContext('2d').drawImage(src,0,0,size,size);return c.toDataURL('image/jpeg',.6)}
 function loadHist(){try{return JSON.parse(localStorage.getItem('plite_hist')||'[]')}catch(e){return []}}
@@ -390,7 +497,6 @@ function showHist(entry){
 /* ---------- UI ---------- */
 function tab(n){for(const i of [1,2]){$('p'+i).hidden=i!==n;$('t'+i).setAttribute('aria-selected',i===n)}if(n===2)render()}
 $('t1').onclick=()=>tab(1);$('t2').onclick=()=>tab(2);
-
 let sel=new Set(),visible=[],cur=null,newImg=null;
 function ask(m){return new Promise(r=>{$('am').textContent=m;$('ask').hidden=false;const f=v=>{$('ask').hidden=true;$('ay').onclick=$('an').onclick=null;r(v)};$('ay').onclick=()=>f(true);$('an').onclick=()=>f(false)})}
 function openLightbox(src){$('lbi').src=src;$('lb').hidden=false}
@@ -456,12 +562,16 @@ async function addFiles(list,input){
   input.value='';render();
 }
 $('add').onchange=e=>addFiles(e.target.files,e.target);
-
 let lastQ=null;
 async function addQuery(name,type,btn){
   if(!lastQ)return;btn.disabled=true;btn.textContent='Əlavə olunur...';
   try{await put({name,type,thumb:lastQ.toDataURL('image/jpeg',.8),f:feat(lastQ,0),v2:await itemEmbs(lastQ)});btn.textContent='Əlavə olundu ✓';render()}
   catch(e){btn.textContent='Xəta: '+e.message}
+}
+function whyHtml(dd,cc,oo){ // nəticənin izahı: hansı xüsusiyyət uyğundur
+  const pc=v=>Math.round((v+1)/2*100);
+  const bar=v=>'<span class="whybar" style="width:'+Math.max(2,Math.round((v+1)/2*40))+'px"></span>';
+  return '<div class="why">DINO '+bar(dd)+' <b>'+pc(dd)+'%</b> · CLIP '+bar(cc)+' <b>'+pc(cc)+'%</b> · Rəng '+bar(oo)+' <b>'+pc(oo)+'%</b></div>';
 }
 async function search(file){
   if(!file)return;
@@ -474,14 +584,16 @@ async function search(file){
     const qe=[];for(let r=0;r<4;r++)qe.push([await dino(c,r,CROPS[0]),await dino(c,r,CROPS[1])]);
     const best=new Map();
     for(const it of items){
-      let s=-1;
+      let s=-1,bd=0,bc=0,bo=0;
       for(let r=0;r<4;r++){
         let dd=-1,cc=-1;
         for(let a=0;a<2;a++)for(let b=0;b<it.v2.length;b++){const p=a===b?0:.04,x1=dot(qe[r][a].d,it.v2[b].d)-p,x2=dot(qe[r][a].c,it.v2[b].c)-p;if(x1>dd)dd=x1;if(x2>cc)cc=x2}
-        const v=W.d*dd+W.c*cc+W.o*sim(qf[r],it.f);if(v>s)s=v;
+        const oo=sim(qf[r],it.f),v=W.d*dd+W.c*cc+W.o*oo;
+        if(v>s){s=v;bd=dd;bc=cc;bo=oo}
       }
       const key=it.type+'|'+it.name,cur=best.get(key);
-      if(!cur)best.set(key,{it,s,n:1});else{cur.n++;if(s>cur.s){cur.it=it;cur.s=s}}
+      if(!cur)best.set(key,{it,s,n:1,d:bd,c:bc,o:bo});
+      else{cur.n++;if(s>cur.s){cur.it=it;cur.s=s;cur.d=bd;cur.c=bc;cur.o=bo}}
     }
     const sc=[...best.values()].sort((a,b)=>b.s-a.s).slice(0,3);
     $('qs').textContent=best.size+' model tapıldı';
@@ -494,7 +606,7 @@ async function search(file){
       const tg=document.createElement('span');tg.className='tag';tg.textContent=(r.it.type==='kafel'?'Kafel':'Metlax')+' · '+r.n+' şəkil';
       const ok=document.createElement('button');ok.className='btn alt';ok.style.cssText='padding:8px;font-size:.9rem;margin-top:8px';ok.textContent='Düzgündür, əlavə et';
       ok.onclick=()=>addQuery(r.it.name,r.it.type,ok);
-      t.append(b,tg,ok);
+      t.append(b,tg,whyHtml(r.d,r.c,r.o),ok);
       const p=document.createElement('div');p.className='pct';p.textContent=Math.round(r.s*100)+'%';
       d.append(im,t,p);rs.append(d);
     });
@@ -533,136 +645,4 @@ function drawLetterboxed(v,cropW,cropH,outSize){
 try{const sv=localStorage.getItem('plite_tsz');if(sv&&SIZES[sv])$('tsz').value=sv}catch(e){}
 $('tsz').onchange=()=>{try{localStorage.setItem('plite_tsz',$('tsz').value)}catch(e){}placeFrame()};
 let stream=null,anT=null,hist=[],anC=null,liveTick=0,liveBusy=false;
-async function openCam(){$('cm').hidden=false;$('ce').textContent='';$('lv').hidden=true;$('cv').style.transform='scale(1)';lastQ=null;try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});$('cv').srcObject=stream;hist=[];liveTick=0;clearInterval(anT);anT=setInterval(analyze,550)}catch(e){$('ce').textContent='Kamera açılmadı. Kameranın qoşulduğunu və icazə verildiyini yoxla.'}}
-function closeCam(){clearInterval(anT);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('cm').hidden=true;$('lv').hidden=true}
-function analyzePixels(d,S){
-  const n=S*S,L=new Float32Array(n),q=[0,0,0,0],qn=[0,0,0,0],rr=[0,0,0],cr=[0,0,0];
-  let sum=0,dark=0,bright=0,rn=0,cn=0;
-  for(let y=0;y<S;y++)for(let x=0;x<S;x++){
-    const i=y*S+x,k=i*4,l=.299*d[k]+.587*d[k+1]+.114*d[k+2];
-    L[i]=l;sum+=l;if(l<25)dark++;if(l>245)bright++;
-    const qi=(y>=S/2?2:0)+(x>=S/2?1:0);q[qi]+=l;qn[qi]++;
-    if(x<8||y<8||x>=S-8||y>=S-8){rr[0]+=d[k];rr[1]+=d[k+1];rr[2]+=d[k+2];rn++}
-    else if(x>=S*.3&&x<S*.7&&y>=S*.3&&y<S*.7){cr[0]+=d[k];cr[1]+=d[k+1];cr[2]+=d[k+2];cn++}
-  }
-  const mean=sum/n,qm=q.map((a,i)=>a/qn[i]);
-  const ev=(Math.max(...qm)-Math.min(...qm))/Math.max(mean,1);
-  let ls=0,l2=0,m=0;
-  for(let y=1;y<S-1;y++)for(let x=1;x<S-1;x++){const i=y*S+x,p=4*L[i]-L[i-1]-L[i+1]-L[i-S]-L[i+S];ls+=p;l2+=p*p;m++}
-  const lv=l2/m-(ls/m)*(ls/m);
-  const dist=Math.hypot(rr[0]/rn-cr[0]/cn,rr[1]/rn-cr[1]/cn,rr[2]/rn-cr[2]/cn);
-  return{mean,dark:dark/n,bright:bright/n,ev,lv,dist};
-}
-function judge(a,peak,histLen){
-  const r=[];
-  if(a.mean<70)r.push(['bad','İşıq azdır']);
-  else if(a.mean<95)r.push(['warn','İşıq zəifdir']);
-  else if(a.mean>200)r.push(['warn','İşıq çoxdur']);
-  else if(a.bright>.08)r.push(['warn','Parıltı var']);
-  else if(a.dark>.08)r.push(['warn','Qaranlıq sahə var']);
-  else r.push(['ok','İşıq yaxşı']);
-  r.push(a.ev>.35?['warn','Kölgə var']:['ok','Kölgə yox']);
-  r.push(histLen>=6&&peak>25&&a.lv<.45*peak?['warn','Bulanıqdır, sabit tut']:['ok','Kəskindir']);
-  r.push(a.dist>60?['warn','Yaxınlaş']:['ok','Məsafə yaxşı']);
-  return r;
-}
-function analyze(){
-  const v=$('cv');if(!v.videoWidth||$('cm').hidden)return;
-  const S=96,{w:cw,h:ch}=videoCropRect(v,1),lc=drawLetterboxed(v,cw,ch,S);
-  const a=analyzePixels(lc.getContext('2d').getImageData(0,0,S,S).data,S);
-  hist.push(a.lv);if(hist.length>12)hist.shift();
-  const res=judge(a,Math.max(...hist),hist.length);
-  const bad=res.some(r=>r[0]==='bad'),warn=res.some(r=>r[0]!=='ok'),col=bad?'#e74c3c':warn?'#f39c12':'#2ecc71';
-  const sizeOk=a.dist<=60;
-  $('fr').style.borderColor=sizeOk?'#2ecc71':'#e74c3c';
-  $('chk').innerHTML='<div style="font-weight:700;color:'+col+'">'+(warn?'Standarta uyğun deyil':'Standarta uyğundur ✓')+'</div>'+
-    res.map(r=>'<div style="color:'+(r[0]==='ok'?'#2ecc71':r[0]==='bad'?'#e74c3c':'#f39c12')+'">'+(r[0]==='ok'?'✓ ':'! ')+r[1]+'</div>').join('');
-  $('cs').textContent=warn?'Yenə də çək':'Çək ✓';
-  liveTick++;
-  if(sizeOk&&!bad&&!liveBusy&&liveTick%4===0){liveBusy=true;liveMatch(v,1).finally(()=>{liveBusy=false})}
-  else if(!sizeOk){$('lv').hidden=true}
-}
-async function liveMatch(v,z){
-  try{
-    const items=(await all()).filter(x=>x.v2);
-    if(!items.length){$('lv').hidden=true;return}
-    const{w:cw,h:ch}=videoCropRect(v,z),qc=drawLetterboxed(v,cw,ch,256);
-    const emb=await dino(qc,0,CROPS[0]),qf=feat(qc,0);
-    const best=new Map();
-    for(const it of items){
-      let dd=-1,cc=-1;
-      for(const e of it.v2){const x1=dot(emb.d,e.d),x2=dot(emb.c,e.c);if(x1>dd)dd=x1;if(x2>cc)cc=x2}
-      const vv=W.d*dd+W.c*cc+W.o*sim(qf,it.f),key=it.type+'|'+it.name,prev=best.get(key);
-      if(!prev||vv>prev.vv)best.set(key,{it,vv});
-    }
-    let top=null;for(const val of best.values())if(!top||val.vv>top.vv)top=val;
-    if(top&&!$('cm').hidden){
-      $('lv').hidden=false;$('lvi').src=top.it.thumb;$('lvn').textContent=top.it.name;
-      $('lvty').textContent=top.it.type==='kafel'?'Kafel':'Metlax';$('lvp').textContent=Math.round(top.vv*100)+'%';
-    }
-  }catch(e){}
-}
-function placeFrame(){const v=$('cv');if(!v.clientWidth)return;const f=frameSize(v.clientWidth,v.clientHeight,getRatio());$('fr').style.width=Math.round(f.w)+'px';$('fr').style.height=Math.round(f.h)+'px'}
-$('cv').onloadedmetadata=placeFrame;$('cv').onplaying=placeFrame;window.addEventListener('resize',placeFrame);
-let camMode='search',catalogShots=[];
-const SHOT_HINTS=[
-  'Düz qarşıdan, adi işıqda çək',
-  'Eyni plitəni 90° çevirib çək',
-  'Bir az yaxından çək',
-  'Bir az uzaqdan çək',
-  'Yan bucaqdan, bir az əyərək çək',
-  'Zəif işıqda və ya kölgəli tərəfdən çək'
-];
-function openCamFor(mode){
-  camMode=mode;catalogShots=[];
-  $('csdone').hidden=mode!=='catalog';
-  $('csrow').hidden=true;$('csrow').innerHTML='';
-  if(mode==='catalog')renderShots();else $('csinfo').hidden=true;
-  openCam();
-}
-function renderShots(){
-  const row=$('csrow');row.innerHTML='';
-  catalogShots.forEach((c,i)=>{
-    const im=new Image();im.src=c.toDataURL('image/jpeg',.6);
-    im.style.cssText='width:52px;height:52px;object-fit:cover;border-radius:8px;border:2px solid #fff;flex:none;cursor:pointer';
-    im.title='Silmək üçün bas';im.onclick=()=>{catalogShots.splice(i,1);renderShots()};
-    row.append(im);
-  });
-  row.hidden=!catalogShots.length;
-  const n=catalogShots.length;
-  $('csinfo').hidden=false;
-  $('csinfo').textContent=n>=6?'6 şəkil tamamlandı. Bitir bas.':(n+1)+'/6: '+SHOT_HINTS[n];
-  $('csdone').textContent='Bitir ('+n+')';
-}
-$('camb').onclick=()=>openCamFor('search');
-$('ccamb').onclick=()=>openCamFor('catalog');
-$('cx').onclick=closeCam;
-function doCapture(){
-  const v=$('cv');if(!v.videoWidth)return;
-  const{w:cw,h:ch}=videoCropRect(v,1),c=drawLetterboxed(v,cw,ch,320);
-  if(camMode==='catalog'){
-    catalogShots.push(c);renderShots();
-    if(catalogShots.length>=6)finishCatalogCapture();
-    return;
-  }
-  c.toBlob(b=>{closeCam();search(new File([b],'kamera.jpg',{type:'image/jpeg'}))},'image/jpeg',.92)
-}
-async function finishCatalogCapture(){
-  if(!catalogShots.length)return;
-  closeCam();
-  $('cci').src=catalogShots[0].toDataURL('image/jpeg',.8);
-  $('ccn').value='';$('cct').value=$('nt').value;$('ccm').textContent='';
-  $('ccn2').textContent=catalogShots.length+' şəkil';
-  $('cc').hidden=false;
-  $('ccn').placeholder='Oxunur...';
-  try{
-    const guess=await readLabel(catalogShots[0]);
-    if(guess&&!$('ccn').value){$('ccn').value=guess;$('ccm').textContent='Etiketdən oxundu, lazım olsa düzəlt.'}
-  }catch(e){}
-  $('ccn').placeholder='Məs: K-101';
-}
-$('csdone').onclick=finishCatalogCapture;
-$('cs').onclick=doCapture;
-$('lv').onclick=doCapture;
-render();migrate();renderHist();
-</scri
+async function openCam(){$('cm').hidden=false;$('ce').textContent='';$('lv').hidden=true;$('cv').style.transform='scale(1)';lastQ=null;try{strea
