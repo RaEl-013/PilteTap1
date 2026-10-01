@@ -411,7 +411,7 @@ async function render(){
     const dv=document.createElement('div');dv.textContent=it.name+' · '+(it.type==='kafel'?'Kafel':'Metlax');dv.style.cursor='pointer';dv.onclick=()=>edit(it);
     const cb=document.createElement('input');cb.type='checkbox';cb.checked=sel.has(it.id);cb.setAttribute('aria-label','Seç: '+it.name);
     cb.style.cssText='position:absolute;top:6px;left:6px;width:20px;height:20px';cb.onchange=()=>{cb.checked?sel.add(it.id):sel.delete(it.id);upBulk()};
-    const mg=document.createElement('button');mg.textContent='🔍';mg.title='Böyüt';mg.style.cssText='position:absolute;bottom:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:13px;cursor:pointer';
+    const mg=document.createElement('button');mg.textContent='🔍';mg.title='Böyüt';mg.style.cssText='position:absolute;top:auto;right:auto;bottom:4px;left:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:13px;cursor:pointer';
     mg.onclick=ev=>{ev.stopPropagation();openLightbox(it.thumb)};
     const b=document.createElement('button');b.textContent='×';b.setAttribute('aria-label','Sil: '+it.name);
     b.onclick=async()=>{if(!await ask('«'+it.name+'» şəkli silinsin?'))return;await del(it.id);sel.delete(it.id);render()};
@@ -608,10 +608,19 @@ async function liveMatch(v,z){
 function placeFrame(){const v=$('cv');if(!v.clientWidth)return;const f=frameSize(v.clientWidth,v.clientHeight,getRatio());$('fr').style.width=Math.round(f.w)+'px';$('fr').style.height=Math.round(f.h)+'px'}
 $('cv').onloadedmetadata=placeFrame;$('cv').onplaying=placeFrame;window.addEventListener('resize',placeFrame);
 let camMode='search',catalogShots=[];
+const SHOT_HINTS=[
+  'Düz qarşıdan, adi işıqda çək',
+  'Eyni plitəni 90° çevirib çək',
+  'Bir az yaxından çək',
+  'Bir az uzaqdan çək',
+  'Yan bucaqdan, bir az əyərək çək',
+  'Zəif işıqda və ya kölgəli tərəfdən çək'
+];
 function openCamFor(mode){
   camMode=mode;catalogShots=[];
   $('csdone').hidden=mode!=='catalog';
-  $('csrow').hidden=true;$('csrow').innerHTML='';$('csinfo').hidden=true;
+  $('csrow').hidden=true;$('csrow').innerHTML='';
+  if(mode==='catalog')renderShots();else $('csinfo').hidden=true;
   openCam();
 }
 function renderShots(){
@@ -623,9 +632,10 @@ function renderShots(){
     row.append(im);
   });
   row.hidden=!catalogShots.length;
-  $('csinfo').hidden=!catalogShots.length;
-  $('csinfo').textContent=catalogShots.length+' / 6 şəkil çəkildi. Daha çək və ya Bitir bas.';
-  $('csdone').textContent='Bitir ('+catalogShots.length+')';
+  const n=catalogShots.length;
+  $('csinfo').hidden=false;
+  $('csinfo').textContent=n>=6?'6 şəkil tamamlandı. Bitir bas.':(n+1)+'/6: '+SHOT_HINTS[n];
+  $('csdone').textContent='Bitir ('+n+')';
 }
 $('camb').onclick=()=>openCamFor('search');
 $('ccamb').onclick=()=>openCamFor('catalog');
