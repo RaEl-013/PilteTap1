@@ -1,4 +1,5 @@
 package az.keramobazar.plitetap
+package az.keramobazar.plitetap
 // QEYD: package sətri app/build.gradle.kts faylındakı "namespace" ilə EYNİ olmalıdır!
 // Eksikdirsə, oradakı namespace-i bura yazın.
 
@@ -57,7 +58,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, vals)!!
                         contentResolver.openOutputStream(uri)!!.use { it.write(bytes) }
-                        toast("Yadda saxlanıldı: Download/$name")
+                        showToast("Yadda saxlanıldı: Download/$name")
                         return@runOnUiThread
                     } else {
                         val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
@@ -65,18 +66,22 @@ class MainActivity : AppCompatActivity() {
                         File(dir, name)
                     }
                     FileOutputStream(file).use { it.write(bytes) }
-                    toast("Yadda saxlanıldı: " + file.absolutePath)
+                    showToast("Yadda saxlanıldı: " + file.absolutePath)
                 } catch (e: Exception) {
-                    toast("Xəta: " + e.message)
+                    showToast("Xəta: " + e.message)
                 }
             }
         }
 
         @JavascriptInterface
-        fun toast(msg: String) = runOnUiThread { toast(msg) }
+        fun toast(msg: String) {
+            runOnUiThread { showToast(msg) }
+        }
     }
 
-    private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+    private fun showToast(msg: String): Unit {
+        Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -143,8 +148,8 @@ class MainActivity : AppCompatActivity() {
                 dir.mkdirs()
                 FileOutputStream(File(dir, name)).use { it.write(bytes) }
             }
-            toast("Yadda saxlanıldı: Download/$name")
-        } catch (e: Exception) { toast("Xəta: " + e.message) }
+            showToast("Yadda saxlanıldı: Download/$name")
+        } catch (e: Exception) { showToast("Xəta: " + e.message) }
     }
 
     override fun onDestroy() { web.destroy(); super.onDestroy() }
