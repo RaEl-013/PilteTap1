@@ -7,11 +7,12 @@ val versionCodeProp = (project.findProperty("versionCode") as String?)?.toInt() 
 val versionNameProp = (project.findProperty("versionName") as String?) ?: "v1"
 
 android {
-    namespace = "az.keramobazar.plitetap"
+    // namespace VE applicationId MainActivity-in package adı ilə EYNİ olmalıdır
+    namespace = "az.plite.tap"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "az.keramobazar.plitetap"
+        applicationId = "az.plite.tap"
         minSdk = 24
         targetSdk = 34
         versionCode = versionCodeProp
