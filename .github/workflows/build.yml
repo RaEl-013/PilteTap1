@@ -79,6 +79,19 @@ jobs:
           fi
 
       # ---------- APK QUR ----------
+      # ---------- GRADLE WRAPPER ----------
+      # Repo-da gradle-wrapper.jar yoxdursa, Gradle özü jar yaradır.
+      - name: Gradle quraşdır və wrapper yarat
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Wrapper jar yarat (əgər repo-da yoxdursa)
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            gradle wrapper --gradle-version 8.7
+          fi
+
       - name: APK qur (versiya = run nömrəsi)
         env:
           KERAMO_STORE_PASSWORD: ${{ secrets.KERAMO_KEYSTORE_PASSWORD || 'keramo123' }}
