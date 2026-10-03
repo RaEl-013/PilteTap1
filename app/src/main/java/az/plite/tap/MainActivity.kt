@@ -11,11 +11,14 @@ import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.webkit.WebViewAssetLoader
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Base64
@@ -24,6 +27,14 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var web: WebView
     private var fileCb: ValueCallback<Array<Uri>>? = null
+
+    // assets/ qovluğunu https://appassets.androidplatform.net/assets/ ünvanı kimi verir
+    // (file:// əvəzinə). Beləliklə .wasm / .mjs faylları normal yüklənir.
+    private val assetLoader by lazy {
+        WebViewAssetLoader.Builder()
+            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+            .build()
+    }
 
     private val pickFile =
         registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { r ->
@@ -105,6 +116,22 @@ class MainActivity : AppCompatActivity() {
                 }
                 return false
             }
+
+            override fun shouldInterceptRequest(
+                view: WebView,
+                request: WebResourceRequest
+            ): WebResourceResponse? {
+                val resp = assetLoader.shouldInterceptRequest(request.url) ?: return null
+                val path = request.url.path ?: return resp
+                // .mjs / .wasm üçün düzgün MIME tipi (yoxsa brauzer modulu və wasm-ı rədd edir)
+                val mime = when {
+                    path.endsWith(".mjs") || path.endsWith(".js") -> "text/javascript"
+                    path.endsWith(".wasm") -> "application/wasm"
+                    else -> return resp
+                }
+                val enc = if (mime == "application/wasm") null else "UTF-8"
+                return WebResourceResponse(mime, enc, resp.data)
+            }
         }
         web.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(req: PermissionRequest) {
@@ -136,7 +163,8 @@ class MainActivity : AppCompatActivity() {
         web.setDownloadListener { url, _, _, _, _ ->
             if (url.startsWith("data:")) saveDataUrl(url)
         }
-        web.loadUrl("file:///android_asset/index.html")
+        // file:///android_asset/index.html əvəzinə:
+        web.loadUrl("https://appassets.androidplatform.net/assets/index.html")
     }
 
     private fun saveDataUrl(url: String) {
