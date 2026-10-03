@@ -1,29 +1,21 @@
-// ort-fix.js
-// Xəta: "no available backend found. ERR: [wasm] RuntimeError: Aborted([object ProgressEvent])"
-//
+// ort-fix.js  (diaqnostikalı versiya)
 // QURAŞDIRMA:
-//  1) Bu faylı repoya index.html ilə eyni qovluğa at.
-//  2) index.html-də bu sətri SİL:   <script src="ort-config.js"></script>
-//     və ort-config.js faylını repodan sil.
-//  3) index.html-də, əsas <script>...</script> blokundan SONRA, </body>-dən əvvəl bu sətri əlavə et:
+//  1) Repoda köhnə ort-fix.js varsa üzərinə yaz (və ort-config.js-i sil, index.html-dən də onun sətrini çıxar).
+//  2) index.html-də əsas <script>...</script> blokundan SONRA, </body>-dən əvvəl:
 //       <script src="ort-fix.js"></script>
-//  4) ORT_VERSION dəyərini öz onnxruntime-web versiyanla əvəz et (aşağıda).
-//
-// İş qaydası: əvvəl ort/ qovluğundakı wasm faylı yoxlanılır; yoxdursa CDN-dən yüklənir
-// (CDN üçün internet lazımdır).
+//  3) ORT_VERSION dəyərini öz versiyanla əvəz et.
+//  4) APK/tətbiq istifadə edirsənsə: yenidən BUILD et və telefonda yenidən QURAŞDIR.
+// Xəta çıxsa, ekrandakı "DIAG:" hissəsini göndər.
 
 (function () {
-  // !!! Versiyanı öz versiyanla əvəz et
-  var ORT_VERSION = '1.20.1';
-  var WASM_FILE = 'ort/ort-wasm-simd-threaded.wasm';
+  var ORT_VERSION = '1.20.1'; // !!! öz versiyanla əvəz et
+  var FILES = ['ort/ort-wasm-simd-threaded.wasm', 'ort/ort-wasm-simd-threaded.mjs', 'ort/ort.wasm.min.js'];
   var CDN = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@' + ORT_VERSION + '/dist/';
 
-  // Fayl var? file:// və http üçün işləyir (başlıqlar gələn kimi dayandırır, 10 MB endirmir)
   function exists(url) {
     return new Promise(function (resolve) {
       try {
-        var x = new XMLHttpRequest();
-        var done = false;
+        var x = new XMLHttpRequest(), done = false;
         var fin = function (v) { if (!done) { done = true; try { x.abort(); } catch (e) {} resolve(v); } };
         x.open('GET', url, true);
         x.onreadystatechange = function () {
@@ -36,10 +28,18 @@
     });
   }
 
-  var pathP = null;
+  var chosen = '?', pathP = null;
   function wasmPath() {
-    if (!pathP) pathP = exists(WASM_FILE).then(function (ok) { return ok ? 'ort/' : CDN; });
+    if (!pathP) pathP = exists(FILES[0]).then(function (ok) { chosen = ok ? 'ort/' : 'CDN'; return ok ? 'ort/' : CDN; });
     return pathP;
+  }
+
+  async function diag() {
+    var r = [];
+    for (var i = 0; i < FILES.length; i++) r.push(FILES[i].split('/').pop() + '=' + ((await exists(FILES[i])) ? 'var' : 'YOX'));
+    var ver = '?'; try { ver = ort.env.versions.web || ort.env.versions.common || '?'; } catch (e) {}
+    return 'sehife=' + location.protocol + '//' + location.pathname + ' | yol=' + chosen +
+      ' | ort=' + ver + ' | internet=' + navigator.onLine + ' | ' + r.join(', ');
   }
 
   async function setupOrt() {
@@ -49,12 +49,16 @@
     ort.env.wasm.wasmPaths = await wasmPath();
   }
 
-  // index.html-dəki eyni adlı funksiyaları əvəz edir
   window.ensureOrt = async function () {
     if (sdSess) return sdSess;
-    await setupOrt();
-    sdSess = await ort.InferenceSession.create('model/model_quantized.onnx');
-    return sdSess;
+    try {
+      await setupOrt();
+      sdSess = await ort.InferenceSession.create('model/model_quantized.onnx');
+      return sdSess;
+    } catch (e) {
+      var d = ''; try { d = await diag(); } catch (e2) {}
+      throw new Error(String(e && e.message || e).slice(0, 160) + ' || DIAG: ' + d);
+    }
   };
 
   window.ensureClip = function () {
