@@ -1,0 +1,113 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # ---------- Ä°MZA AÃ‡ARI (GitHub Secrets-dÉ™n) ----------
+      # Secrets: KERAMO_KEYSTORE_B64, KERAMO_KEYSTORE_PASSWORD, KERAMO_KEY_ALIAS, KERAMO_KEY_PASSWORD
+      # AÃ§ar yoxdursa build DAYANIR (hÉ™r dÉ™fÉ™ yeni aÃ§ar yaransa, proqram kÃ¶hnÉ™nin Ã¼zÉ™rinÉ™ qurulmur).
+      # AÃ§arÄ± yaratmaq Ã¼Ã§Ã¼n "Create Keystore (bir dÉ™fÉ™)" workflow-unu iÅŸlÉ™t.
+      - name: Keystore hazÄ±rla (Secrets-dÉ™n)
+        env:
+          KS_B64: ${{ secrets.KERAMO_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$KS_B64" ]; then
+            echo "::error::KERAMO_KEYSTORE_B64 secret-i yoxdur. ÆvvÉ™lcÉ™ 'Create Keystore (bir dÉ™fÉ™)' workflow-unu iÅŸlÉ™t vÉ™ 4 dÉ™yÉ™ri Secrets-É™ É™lavÉ™ et."
+            exit 1
+          fi
+          echo "$KS_B64" | base64 -d > app/keramo.keystore
+
+      # ---------- AI MODELLÆRÄ° ----------
+      - name: DINOv2 + CLIP modellÉ™rini yÃ¼klÉ™
+        run: |
+          mkdir -p app/src/main/assets/model
+          curl -L --retry 3 -o app/src/main/assets/model/model_quantized.onnx \
+            https://huggingface.co/Xenova/dinov2-small/resolve/main/onnx/model_quantized.onnx
+          curl -L --retry 3 -o app/src/main/assets/model/clip_vision_quantized.onnx \
+            https://huggingface.co/Xenova/clip-vit-base-patch32/resolve/main/onnx/vision_model_quantized.onnx
+
+      # ---------- ONNX RUNTIME WEB (WASM) ----------
+      - name: ONNX Runtime Web fayllarÄ±nÄ± yÃ¼klÉ™
+        run: |
+          mkdir -p app/src/main/assets/ort
+          npm install onnxruntime-web@1.18.0 --no-save
+          cp node_modules/onnxruntime-web/dist/ort.wasm.min.js app/src/main/assets/ort/
+          cp node_modules/onnxruntime-web/dist/ort-wasm.wasm app/src/main/assets/ort/
+          cp node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm app/src/main/assets/ort/
+
+      # ---------- TESSERACT.JS + OCR (eng + aze + rus) ----------
+      - name: Tesseract.js vÉ™ dillÉ™ri yÃ¼klÉ™
+        run: |
+          mkdir -p app/src/main/assets/ocr
+          curl -L --retry 3 -o app/src/main/assets/ocr/tesseract.min.js \
+            https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js
+          curl -L --retry 3 -o app/src/main/assets/ocr/worker.min.js \
+            https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js
+          curl -L --retry 3 -o app/src/main/assets/ocr/tesseract-core-simd-lstm.js \
+            https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract-core-simd-lstm.js
+          for L in eng aze rus; do
+            curl -L --retry 3 -o app/src/main/assets/ocr/$L.traineddata \
+              https://github.com/tesseract-ocr/tessdata_fast/raw/main/$L.traineddata
+          done
+
+      # ---------- LOQO Ä°KONU ----------
+      - name: Loqo ikonu (secrets-dÉ™ varsa)
+        run: |
+          mkdir -p app/src/main/res/mipmap-xxxhdpi
+          if [ -n "${{ secrets.KERAMO_ICON_URL }}" ]; then
+            curl -L --retry 3 -o app/src/main/res/mipmap-xxxhdpi/ic_launcher.png \
+              "${{ secrets.KERAMO_ICON_URL }}"
+          else
+            echo "::notice::KERAMO_ICON_URL yoxdur - mÃ¶vcud ikon qalÄ±r."
+          fi
+
+      # ---------- GRADLE WRAPPER ----------
+      - name: Gradle quraÅŸdÄ±r vÉ™ wrapper yarat
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Wrapper jar yarat (É™gÉ™r repo-da yoxdursa)
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            gradle wrapper --gradle-version 8.7
+          fi
+
+      # ---------- APK QUR ----------
+      - name: APK qur (versiya = run nÃ¶mrÉ™si)
+        env:
+          KERAMO_STORE_PASSWORD: ${{ secrets.KERAMO_KEYSTORE_PASSWORD }}
+          KERAMO_KEY_PASSWORD: ${{ secrets.KERAMO_KEY_PASSWORD }}
+          KERAMO_KEY_ALIAS: ${{ secrets.KERAMO_KEY_ALIAS }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease \
+            -Pandroid.useAndroidX=true \
+            -PversionCode=${{ github.run_number }} \
+            -PversionName=v${{ github.run_number }}
+
+      - name: APK artifact olaraq saxla
+        uses: actions/upload-artifact@v4
+        with:
+          name: plite-tap-v${{ github.run_number }}
+          path: app/build/outputs/apk/release/*.apk
+
+      - name: UÄŸursuzluqda hesabat
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-reports
+          path: app/build/reports/
+          if-no-files-found: ignore
