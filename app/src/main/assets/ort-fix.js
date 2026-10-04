@@ -1,16 +1,17 @@
-// ort-fix.js  (diaqnostikalı versiya)
+// ort-fix.js (v3)
+// Səbəb: səhifə file:///android_asset/index.html kimi açılır, Android WebView bu halda
+// ort/ qovluğundakı .wasm faylını yükləyə bilmir (fayllar var, amma yüklənmir).
+// Həll: file:// olduqda wasm faylları CDN-dən yüklənir (internet lazımdır).
+// Versiya avtomatik tapılır, əl ilə yazmaq lazım deyil.
+//
 // QURAŞDIRMA:
-//  1) Repoda köhnə ort-fix.js varsa üzərinə yaz (və ort-config.js-i sil, index.html-dən də onun sətrini çıxar).
-//  2) index.html-də əsas <script>...</script> blokundan SONRA, </body>-dən əvvəl:
-//       <script src="ort-fix.js"></script>
-//  3) ORT_VERSION dəyərini öz versiyanla əvəz et.
-//  4) APK/tətbiq istifadə edirsənsə: yenidən BUILD et və telefonda yenidən QURAŞDIR.
-// Xəta çıxsa, ekrandakı "DIAG:" hissəsini göndər.
+//  1) Repoda ort-fix.js-in üzərinə yaz.
+//  2) index.html-də </body>-dən əvvəl olmalıdır: <script src="ort-fix.js"></script>
+//  3) Build et, yeni APK-nı telefona qur.
 
 (function () {
-  var ORT_VERSION = '1.20.1'; // !!! öz versiyanla əvəz et
   var FILES = ['ort/ort-wasm-simd-threaded.wasm', 'ort/ort-wasm-simd-threaded.mjs', 'ort/ort.wasm.min.js'];
-  var CDN = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@' + ORT_VERSION + '/dist/';
+  var chosen = '?';
 
   function exists(url) {
     return new Promise(function (resolve) {
@@ -28,25 +29,54 @@
     });
   }
 
-  var chosen = '?', pathP = null;
-  function wasmPath() {
-    if (!pathP) pathP = exists(FILES[0]).then(function (ok) { chosen = ok ? 'ort/' : 'CDN'; return ok ? 'ort/' : CDN; });
-    return pathP;
+  function ortVersion() {
+    try { return ort.env.versions.web || ort.env.versions.common; } catch (e) { return null; }
+  }
+
+  function readBinary(url) {
+    return new Promise(function (resolve) {
+      try {
+        var x = new XMLHttpRequest();
+        x.open('GET', url, true);
+        x.responseType = 'arraybuffer';
+        x.onload = function () { resolve(x.response && x.response.byteLength > 1000 ? x.response : null); };
+        x.onerror = function () { resolve(null); };
+        x.send();
+      } catch (e) { resolve(null); }
+    });
+  }
+
+  var setupP = null;
+  function setupOrt() {
+    if (setupP) return setupP;
+    setupP = (async function () {
+      if (typeof ort === 'undefined') throw new Error('ONNX Runtime Web tapılmadı (ort/ qovluğu yoxdur)');
+      ort.env.wasm.numThreads = 1;
+      ort.env.wasm.simd = true;
+      var isFile = location.protocol === 'file:';
+      var ver = ortVersion();
+      if (isFile && navigator.onLine && ver) {
+        chosen = 'CDN';
+        ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@' + ver + '/dist/';
+      } else if (isFile) {
+        // internet yoxdur: wasm faylını özümüz oxuyub verməyə çalışırıq
+        var bin = await readBinary(FILES[0]);
+        chosen = bin ? 'local-binary' : 'local';
+        if (bin) ort.env.wasm.wasmBinary = bin;
+        ort.env.wasm.wasmPaths = 'ort/';
+      } else {
+        chosen = 'ort/';
+        ort.env.wasm.wasmPaths = 'ort/';
+      }
+    })();
+    return setupP;
   }
 
   async function diag() {
     var r = [];
     for (var i = 0; i < FILES.length; i++) r.push(FILES[i].split('/').pop() + '=' + ((await exists(FILES[i])) ? 'var' : 'YOX'));
-    var ver = '?'; try { ver = ort.env.versions.web || ort.env.versions.common || '?'; } catch (e) {}
     return 'sehife=' + location.protocol + '//' + location.pathname + ' | yol=' + chosen +
-      ' | ort=' + ver + ' | internet=' + navigator.onLine + ' | ' + r.join(', ');
-  }
-
-  async function setupOrt() {
-    if (typeof ort === 'undefined') throw new Error('ONNX Runtime Web tapılmadı (ort/ qovluğu yoxdur)');
-    ort.env.wasm.numThreads = 1;
-    ort.env.wasm.simd = true;
-    ort.env.wasm.wasmPaths = await wasmPath();
+      ' | ort=' + ortVersion() + ' | internet=' + navigator.onLine + ' | ' + r.join(', ');
   }
 
   window.ensureOrt = async function () {
