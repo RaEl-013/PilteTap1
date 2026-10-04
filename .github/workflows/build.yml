@@ -41,6 +41,10 @@ jobs:
             echo "::error::KERAMO_KEYSTORE_PASSWORD içində boşluq, sətir keçidi və ya dırnaq var. Secret-i silib yalnız parolu (boşluqsuz) yenidən yarat."
             exit 1
           fi
+          if printf '%s' "$KS_PASS" | LC_ALL=C grep -q '[^ -~]'; then
+            echo "::error::KERAMO_KEYSTORE_PASSWORD içində ASCII olmayan (gizli) simvol var. Secret-i silib parolu secrets.txt-dən yenidən yapışdır."
+            exit 1
+          fi
           if ! OUT=$(keytool -list -keystore app/keramo.keystore -storepass "$KS_PASS" 2>&1); then
             echo "keytool cavabı: $OUT"
             echo "::error::Keystore açılmadı. Ya KERAMO_KEYSTORE_PASSWORD bu açara aid deyil (başqa run-dan?), ya da KERAMO_KEYSTORE_B64 tam deyil (kəsilib)."
@@ -105,8 +109,10 @@ jobs:
       - name: APK qur (versiya = run nömrəsi)
         env:
           KERAMO_STORE_PASSWORD: ${{ secrets.KERAMO_KEYSTORE_PASSWORD }}
-          KERAMO_KEY_PASSWORD: ${{ secrets.KERAMO_KEY_PASSWORD }}
-          KERAMO_KEY_ALIAS: ${{ secrets.KERAMO_KEY_ALIAS }}
+          # Create Keystore açarında açar parolu keystore parolu ilə eynidir.
+          # KERAMO_KEY_PASSWORD secret-ində gizli simvol olsa "Password is not ASCII" xətası verir, ona görə bunu istifadə etmirik.
+          KERAMO_KEY_PASSWORD: ${{ secrets.KERAMO_KEYSTORE_PASSWORD }}
+          KERAMO_KEY_ALIAS: keramo
         run: |
           chmod +x gradlew
           ./gradlew assembleRelease \
