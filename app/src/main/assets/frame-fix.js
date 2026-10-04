@@ -20,13 +20,15 @@
   var V = document.getElementById('cv');
   if (!SZ || !FR || !CS || !V) return;
 
-  var MIN_S = 6;        // kənarın minimal gücü (az = həssas)
-  var RANGE = 0.15;     // maqnit məsafəsi (çərçivə tərəfinin faizi)
-  var INSET = 0.01;     // fuqa xəttini kənarda saxlamaq üçün kəsmə payı
-  var GLARE = 0.01;     // parlaq piksellərin payı bundan çoxdursa -> parıltı xəbərdarlığı
-  var TILT_MAX = 12;    // dərəcə: bundan çox əyridirsə -> xəbərdarlıq, avto-çəkiliş gözləyir
-  var STABLE = 2;       // avto-çəkiliş üçün ardıcıl uğurlu yoxlama sayı (~0.6 san. hər biri)
-  var COOLDOWN = 2500;  // ms: iki avto-çəkiliş arası minimum fasilə
+  var CFG = window.PLITE_CFG || {};
+  function cfg(k, d) { return CFG[k] != null ? CFG[k] : d; }
+  var MIN_S = cfg('MIN_S', 6);        // kənarın minimal gücü (az = həssas)
+  var RANGE = cfg('RANGE', 0.15);     // maqnit məsafəsi (çərçivə tərəfinin faizi)
+  var INSET = cfg('INSET', 0.01);     // fuqa xəttini kənarda saxlamaq üçün kəsmə payı
+  var GLARE = cfg('GLARE', 0.01);     // parlaq piksellərin payı bundan çoxdursa -> parıltı xəbərdarlığı
+  var TILT_MAX = cfg('TILT_MAX', 12);    // dərəcə: bundan çox əyridirsə -> xəbərdarlıq, avto-çəkiliş gözləyir
+  var STABLE = cfg('STABLE', 2);       // avto-çəkiliş üçün ardıcıl uğurlu yoxlama sayı (~0.6 san. hər biri)
+  var COOLDOWN = cfg('COOLDOWN', 2500);  // ms: iki avto-çəkiliş arası minimum fasilə
 
   function vib(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
   function ratio() { return typeof getRatio === 'function' ? getRatio() : 1; }
@@ -36,7 +38,7 @@
   function key() { return 'plite_ori_' + SZ.value; }
   function getOri() { try { return localStorage.getItem(key()) || 'p'; } catch (e) { return 'p'; } }
   function setOri(v) { try { localStorage.setItem(key(), v); } catch (e) {} }
-  function getAuto() { try { return localStorage.getItem('plite_auto') !== '0'; } catch (e) { return true; } }
+  function getAuto() { try { var v = localStorage.getItem('plite_auto'); return v == null ? cfg('AUTO_DEFAULT', true) !== false : v !== '0'; } catch (e) { return true; } }
   function setAuto(on) { try { localStorage.setItem('plite_auto', on ? '1' : '0'); } catch (e) {} }
 
   function computeFrame(cw, ch, r, ori) {
@@ -235,6 +237,7 @@
   function check() {
     var cm = document.getElementById('cm');
     if (!cm || cm.hidden || document.hidden) return;
+    if (window.PLITE_LABEL_PHASE) return; // etiket şəkli çəkilərkən ramka/avto-çəkiliş işləmir
     var s = snap(V); if (!s) return;
     var tl = tilt(); showLevel(tl);
 
@@ -315,7 +318,7 @@
         c._hi = hi;
       } catch (e) {}
       catalogShots.push(c); renderShots();
-      if (catalogShots.length === 1 && window.PLITE_PREOCR) window.PLITE_PREOCR(c);
+      if (catalogShots.length === 1 && window.PLITE_PREOCR && !window.PLITE_LABEL_SHOT) window.PLITE_PREOCR(c);
       if (catalogShots.length >= (window.PLITE_MAX_SHOTS || 6)) finishCatalogCapture();
       return;
     }
