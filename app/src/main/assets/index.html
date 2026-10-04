@@ -792,5 +792,15 @@ render();migrate();renderHist();showVer();setTimeout(ensureClip,1500); // CLIP a
    <script src="frame-fix.js"></script>
    <script src="speed-fix.js"></script>
    <script src="sticker-ocr.js"></script>
+index.html (app/src/main/assets/index.html) — </body>-dən əvvəl, əsas <script>...</script> blokundan SONRA, BU SIRA ilə:
+
+<script src="plite-config.js"></script>
+<script src="ort-fix.js"></script>
+<script src="frame-fix.js"></script>
+<script src="speed-fix.js"></script>
+<script src="sticker-ocr.js"></script>
+<script src="label-shot.js"></script>
+
+Silinməlidir:  <script src="ort-config.js"></script>   (və ort-config.js faylı)
 </body>
 </html>
