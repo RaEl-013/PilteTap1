@@ -295,18 +295,27 @@
 
   function capture() {
     if (!V.videoWidth) return;
-    var vw = V.videoWidth, vh = V.videoHeight, c = null, s = null;
+    var vw = V.videoWidth, vh = V.videoHeight, c = null, s = null, rc = null;
     try { s = snap(V); } catch (e) {}
     if (s && s.ok) {
       var sw = (s.r - s.l) * vw / s.W, sh = (s.b - s.t) * vh / s.H;
-      c = drawRect(V, s.l * vw / s.W + sw * INSET, s.t * vh / s.H + sh * INSET, sw * (1 - 2 * INSET), sh * (1 - 2 * INSET), 320);
+      rc = [s.l * vw / s.W + sw * INSET, s.t * vh / s.H + sh * INSET, sw * (1 - 2 * INSET), sh * (1 - 2 * INSET)];
     } else {
       var cr = videoCropRect(V, 1);
-      c = drawRect(V, (vw - cr.w) / 2, (vh - cr.h) / 2, cr.w, cr.h, 320);
+      rc = [(vw - cr.w) / 2, (vh - cr.h) / 2, cr.w, cr.h];
     }
+    c = drawRect(V, rc[0], rc[1], rc[2], rc[3], 320);
     vib(80);
     if (camMode === 'catalog') {
+      // etiket (stiker) oxumaq üçün yüksək ayırdetməli nüsxə
+      try {
+        var sc = Math.min(1, 1200 / Math.max(rc[2], rc[3])), hi = document.createElement('canvas');
+        hi.width = Math.round(rc[2] * sc); hi.height = Math.round(rc[3] * sc);
+        hi.getContext('2d').drawImage(V, rc[0], rc[1], rc[2], rc[3], 0, 0, hi.width, hi.height);
+        c._hi = hi;
+      } catch (e) {}
       catalogShots.push(c); renderShots();
+      if (catalogShots.length === 1 && window.PLITE_PREOCR) window.PLITE_PREOCR(c);
       if (catalogShots.length >= (window.PLITE_MAX_SHOTS || 6)) finishCatalogCapture();
       return;
     }
