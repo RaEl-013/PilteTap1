@@ -16,29 +16,26 @@ jobs:
           java-version: "17"
 
       # ---------- İMZA AÇARI (GitHub Secrets-dən) ----------
-      # Settings -> Secrets -> Actions:
-      #   KERAMO_KEYSTORE_B64, KERAMO_KEYSTORE_PASSWORD, KERAMO_KEY_ALIAS, KERAMO_KEY_PASSWORD
-      - name: Keystore yarat (Secrets-dən, yoxdursa müvəqqəti)
+      # Secrets: KERAMO_KEYSTORE_B64, KERAMO_KEYSTORE_PASSWORD, KERAMO_KEY_ALIAS, KERAMO_KEY_PASSWORD
+      # Açar yoxdursa build DAYANIR (hər dəfə yeni açar yaransa, proqram köhnənin üzərinə qurulmur).
+      # Açarı yaratmaq üçün "Create Keystore (bir dəfə)" workflow-unu işlət.
+      - name: Keystore hazırla (Secrets-dən)
+        env:
+          KS_B64: ${{ secrets.KERAMO_KEYSTORE_B64 }}
         run: |
-          if [ -n "${{ secrets.KERAMO_KEYSTORE_B64 }}" ]; then
-            echo "${{ secrets.KERAMO_KEYSTORE_B64 }}" | base64 -d > app/keramo.keystore
-            echo "keystore=secrets" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::KERAMO_KEYSTORE_B64 tapılmadı - müvəqqəti keystore yaradılır. ÖZ AÇARINIZI Secrets-ə əlavə edin!"
-            keytool -genkey -v -keystore app/keramo.keystore \
-              -alias keramo -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass keramo123 -keypass keramo123 \
-              -dname "CN=Keramo Bazar, O=Keramo, C=AZ"
+          if [ -z "$KS_B64" ]; then
+            echo "::error::KERAMO_KEYSTORE_B64 secret-i yoxdur. Əvvəlcə 'Create Keystore (bir dəfə)' workflow-unu işlət və 4 dəyəri Secrets-ə əlavə et."
+            exit 1
           fi
-        id: keystore
+          echo "$KS_B64" | base64 -d > app/keramo.keystore
 
       # ---------- AI MODELLƏRİ ----------
       - name: DINOv2 + CLIP modellərini yüklə
         run: |
           mkdir -p app/src/main/assets/model
-          curl -L --retry 3 -o app/src/main/assets/model/model_quantized.onnx \
+          curl -fL --retry 3 -o app/src/main/assets/model/model_quantized.onnx \
             https://huggingface.co/Xenova/dinov2-small/resolve/main/onnx/model_quantized.onnx
-          curl -L --retry 3 -o app/src/main/assets/model/clip_vision_quantized.onnx \
+          curl -fL --retry 3 -o app/src/main/assets/model/clip_vision_quantized.onnx \
             https://huggingface.co/Xenova/clip-vit-base-patch32/resolve/main/onnx/vision_model_quantized.onnx
 
       # ---------- ONNX RUNTIME WEB (WASM) ----------
@@ -50,37 +47,31 @@ jobs:
           cp node_modules/onnxruntime-web/dist/ort-wasm.wasm app/src/main/assets/ort/
           cp node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm app/src/main/assets/ort/
 
-      # ---------- TESSERACT.JS + OCR (eng + aze + rus) ----------
-      # index.html gözləyir: ocr/tesseract.min.js, ocr/worker.min.js,
-      # ocr/tesseract-core-simd-lstm.js, ocr/*.traineddata
-      - name: Tesseract.js və dilləri yüklə
+      # ---------- TESSERACT.JS + OCR (stiker oxumaq üçün, yalnız ingilis dili) ----------
+      # Core faylları tesseract.js-core paketindədir (CDN-dəki dist/ qovluğunda yoxdur).
+      - name: Tesseract.js və dil faylını yüklə
         run: |
           mkdir -p app/src/main/assets/ocr
-          curl -L --retry 3 -o app/src/main/assets/ocr/tesseract.min.js \
-            https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js
-          curl -L --retry 3 -o app/src/main/assets/ocr/worker.min.js \
-            https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js
-          curl -L --retry 3 -o app/src/main/assets/ocr/tesseract-core-simd-lstm.js \
-            https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract-core-simd-lstm.js
-          for L in eng aze rus; do
-            curl -L --retry 3 -o app/src/main/assets/ocr/$L.traineddata \
-              https://github.com/tesseract-ocr/tessdata_fast/raw/main/$L.traineddata
-          done
+          npm install tesseract.js@5 --no-save
+          cp node_modules/tesseract.js/dist/tesseract.min.js app/src/main/assets/ocr/
+          cp node_modules/tesseract.js/dist/worker.min.js app/src/main/assets/ocr/
+          cp node_modules/tesseract.js-core/tesseract-core*lstm* app/src/main/assets/ocr/
+          curl -fL --retry 3 -o app/src/main/assets/ocr/eng.traineddata \
+            https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata
+          ls -la app/src/main/assets/ocr
 
       # ---------- LOQO İKONU ----------
       - name: Loqo ikonu (secrets-də varsa)
         run: |
           mkdir -p app/src/main/res/mipmap-xxxhdpi
           if [ -n "${{ secrets.KERAMO_ICON_URL }}" ]; then
-            curl -L --retry 3 -o app/src/main/res/mipmap-xxxhdpi/ic_launcher.png \
+            curl -fL --retry 3 -o app/src/main/res/mipmap-xxxhdpi/ic_launcher.png \
               "${{ secrets.KERAMO_ICON_URL }}"
           else
             echo "::notice::KERAMO_ICON_URL yoxdur - mövcud ikon qalır."
           fi
 
-      # ---------- APK QUR ----------
       # ---------- GRADLE WRAPPER ----------
-      # Repo-da gradle-wrapper.jar yoxdursa, Gradle özü jar yaradır.
       - name: Gradle quraşdır və wrapper yarat
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -92,14 +83,14 @@ jobs:
             gradle wrapper --gradle-version 8.7
           fi
 
+      # ---------- APK QUR ----------
       - name: APK qur (versiya = run nömrəsi)
         env:
-          KERAMO_STORE_PASSWORD: ${{ secrets.KERAMO_KEYSTORE_PASSWORD || 'keramo123' }}
-          KERAMO_KEY_PASSWORD: ${{ secrets.KERAMO_KEY_PASSWORD || 'keramo123' }}
-          KERAMO_KEY_ALIAS: ${{ secrets.KERAMO_KEY_ALIAS || 'keramo' }}
+          KERAMO_STORE_PASSWORD: ${{ secrets.KERAMO_KEYSTORE_PASSWORD }}
+          KERAMO_KEY_PASSWORD: ${{ secrets.KERAMO_KEY_PASSWORD }}
+          KERAMO_KEY_ALIAS: ${{ secrets.KERAMO_KEY_ALIAS }}
         run: |
           chmod +x gradlew
-          # useAndroidX həm fayldan, həm də buradan - ikiqat təminat
           ./gradlew assembleRelease \
             -Pandroid.useAndroidX=true \
             -PversionCode=${{ github.run_number }} \
