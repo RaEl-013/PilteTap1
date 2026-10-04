@@ -10,9 +10,10 @@
 
 (function () {
   var BASE = new URL('ocr', location.href).href;   // mütləq ünvan (worker üçün lazımdır)
-  var MIN_CONF = 55;      // oxunmuş yazının minimal inamı (%)
-  var MAIN_RATIO = 0.7;   // əsas yazı = ən böyük yazının hündürlüyünün ən azı 70%-i
-  var TIME_CAP = 25000;   // ms: bütün şəkillər üçün ümumi limit
+  var CFG = window.PLITE_CFG || {};
+  var MIN_CONF = CFG.MIN_CONF != null ? CFG.MIN_CONF : 55;      // oxunmuş yazının minimal inamı (%)
+  var MAIN_RATIO = CFG.MAIN_RATIO != null ? CFG.MAIN_RATIO : 0.7;   // əsas yazı = ən böyük yazının hündürlüyünün ən azı 70%-i
+  var TIME_CAP = CFG.TIME_CAP != null ? CFG.TIME_CAP : 25000;   // ms: bütün şəkillər üçün ümumi limit
 
   var worker = null, wp = null;
   function getWorker() {
@@ -140,13 +141,16 @@
   }
 
   // frame-fix.js: ilk şəkil çəkiləndə çağırır -> OCR arxa planda artıq başlayır
-  window.PLITE_PREOCR = function (c) { try { ocrCached(c); } catch (e) {} };
+  window.PLITE_PREOCR = function (c) { try { return ocrCached(c); } catch (e) { return null; } };
 
   // index.html-dəki readLabel əvəz olunur: kataloq çəkilişi bitəndə çağırılır
   window.readLabel = async function (canvas) {
     showChips([]);
     try {
-      var all = [canvas].concat((typeof catalogShots !== 'undefined' ? catalogShots : []).filter(function (x) { return x !== canvas; }));
+      var all = [];
+      if (window.PLITE_LABEL_SHOT) all.push(window.PLITE_LABEL_SHOT); // ayrıca çəkilmiş etiket şəkli əvvəl oxunur
+      all.push(canvas);
+      (typeof catalogShots !== 'undefined' ? catalogShots : []).forEach(function (x) { if (all.indexOf(x) < 0) all.push(x); });
       var t0 = Date.now();
       for (var i = 0; i < all.length; i++) {
         if (i > 0 && Date.now() - t0 > TIME_CAP) break;
