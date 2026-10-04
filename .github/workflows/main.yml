@@ -33,9 +33,9 @@ jobs:
       - name: DINOv2 + CLIP modellÉ™rini yÃ¼klÉ™
         run: |
           mkdir -p app/src/main/assets/model
-          curl -L --retry 3 -o app/src/main/assets/model/model_quantized.onnx \
+          curl -fL --retry 3 -o app/src/main/assets/model/model_quantized.onnx \
             https://huggingface.co/Xenova/dinov2-small/resolve/main/onnx/model_quantized.onnx
-          curl -L --retry 3 -o app/src/main/assets/model/clip_vision_quantized.onnx \
+          curl -fL --retry 3 -o app/src/main/assets/model/clip_vision_quantized.onnx \
             https://huggingface.co/Xenova/clip-vit-base-patch32/resolve/main/onnx/vision_model_quantized.onnx
 
       # ---------- ONNX RUNTIME WEB (WASM) ----------
@@ -47,27 +47,25 @@ jobs:
           cp node_modules/onnxruntime-web/dist/ort-wasm.wasm app/src/main/assets/ort/
           cp node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm app/src/main/assets/ort/
 
-      # ---------- TESSERACT.JS + OCR (eng + aze + rus) ----------
-      - name: Tesseract.js vÉ™ dillÉ™ri yÃ¼klÉ™
+      # ---------- TESSERACT.JS + OCR (stiker oxumaq Ã¼Ã§Ã¼n, yalnÄ±z ingilis dili) ----------
+      # Core fayllarÄ± tesseract.js-core paketindÉ™dir (CDN-dÉ™ki dist/ qovluÄŸunda yoxdur).
+      - name: Tesseract.js vÉ™ dil faylÄ±nÄ± yÃ¼klÉ™
         run: |
           mkdir -p app/src/main/assets/ocr
-          curl -L --retry 3 -o app/src/main/assets/ocr/tesseract.min.js \
-            https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js
-          curl -L --retry 3 -o app/src/main/assets/ocr/worker.min.js \
-            https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js
-          curl -L --retry 3 -o app/src/main/assets/ocr/tesseract-core-simd-lstm.js \
-            https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract-core-simd-lstm.js
-          for L in eng aze rus; do
-            curl -L --retry 3 -o app/src/main/assets/ocr/$L.traineddata \
-              https://github.com/tesseract-ocr/tessdata_fast/raw/main/$L.traineddata
-          done
+          npm install tesseract.js@5 --no-save
+          cp node_modules/tesseract.js/dist/tesseract.min.js app/src/main/assets/ocr/
+          cp node_modules/tesseract.js/dist/worker.min.js app/src/main/assets/ocr/
+          cp node_modules/tesseract.js-core/tesseract-core*lstm* app/src/main/assets/ocr/
+          curl -fL --retry 3 -o app/src/main/assets/ocr/eng.traineddata \
+            https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata
+          ls -la app/src/main/assets/ocr
 
       # ---------- LOQO Ä°KONU ----------
       - name: Loqo ikonu (secrets-dÉ™ varsa)
         run: |
           mkdir -p app/src/main/res/mipmap-xxxhdpi
           if [ -n "${{ secrets.KERAMO_ICON_URL }}" ]; then
-            curl -L --retry 3 -o app/src/main/res/mipmap-xxxhdpi/ic_launcher.png \
+            curl -fL --retry 3 -o app/src/main/res/mipmap-xxxhdpi/ic_launcher.png \
               "${{ secrets.KERAMO_ICON_URL }}"
           else
             echo "::notice::KERAMO_ICON_URL yoxdur - mÃ¶vcud ikon qalÄ±r."
