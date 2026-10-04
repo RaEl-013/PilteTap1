@@ -13,9 +13,10 @@
 //   ALL_ROT    true etsən axtarışda 4 çevirmə yenidən yoxlanılır (dəqiq, amma 4 dəfə yavaş).
 
 (function () {
-  var CROPS_N = 2;
-  var MAX_SHOTS = 3;
-  var ALL_ROT = false;
+  var CFG = window.PLITE_CFG || {};
+  var CROPS_N = CFG.CROPS_N != null ? CFG.CROPS_N : 2;
+  var MAX_SHOTS = CFG.MAX_SHOTS != null ? CFG.MAX_SHOTS : 3;
+  var ALL_ROT = CFG.ALL_ROT != null ? CFG.ALL_ROT : false;
   window.PLITE_MAX_SHOTS = MAX_SHOTS;
 
   // 1) Kataloq üçün az kəsim
