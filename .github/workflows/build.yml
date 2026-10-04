@@ -22,12 +22,21 @@ jobs:
       - name: Keystore hazırla (Secrets-dən)
         env:
           KS_B64: ${{ secrets.KERAMO_KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.KERAMO_KEYSTORE_PASSWORD }}
         run: |
           if [ -z "$KS_B64" ]; then
             echo "::error::KERAMO_KEYSTORE_B64 secret-i yoxdur. Əvvəlcə 'Create Keystore (bir dəfə)' workflow-unu işlət və 4 dəyəri Secrets-ə əlavə et."
             exit 1
           fi
-          echo "$KS_B64" | base64 -d > app/keramo.keystore
+          # boşluq, sətir keçidi, dırnaq və təsadüfən kopyalanmış "KERAMO_KEYSTORE_B64:" yazısı təmizlənir
+          printf '%s' "$KS_B64" | sed 's/^KERAMO_KEYSTORE_B64:*//' | tr -d ' \r\n\t"' | base64 -d > app/keramo.keystore || {
+            echo "::error::KERAMO_KEYSTORE_B64 dəyəri düzgün deyil (base64 oxunmur). Secret-i silib secrets.txt-dəki UZUN sətri tam kopyalayıb yenidən yarat."
+            exit 1
+          }
+          if ! keytool -list -keystore app/keramo.keystore -storepass "$KS_PASS" > /dev/null 2>&1; then
+            echo "::error::Keystore açılmadı. KERAMO_KEYSTORE_PASSWORD səhvdir və ya KERAMO_KEYSTORE_B64 tam deyil (kəsilib)."
+            exit 1
+          fi
 
       # ---------- AI MODELLƏRİ ----------
       - name: DINOv2 + CLIP modellərini yüklə
