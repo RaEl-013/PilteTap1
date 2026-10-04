@@ -15,44 +15,44 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # ---------- İMZA AÇARI (GitHub Secrets-dən) ----------
+      # ---------- Ä°MZA AÃ‡ARI (GitHub Secrets-dÉ™n) ----------
       # Secrets: KERAMO_KEYSTORE_B64, KERAMO_KEYSTORE_PASSWORD, KERAMO_KEY_ALIAS, KERAMO_KEY_PASSWORD
-      # Açar yoxdursa build DAYANIR (hər dəfə yeni açar yaransa, proqram köhnənin üzərinə qurulmur).
-      # Açarı yaratmaq üçün "Create Keystore (bir dəfə)" workflow-unu işlət.
-      - name: Keystore hazırla (Secrets-dən)
+      # AÃ§ar yoxdursa build DAYANIR (hÉ™r dÉ™fÉ™ yeni aÃ§ar yaransa, proqram kÃ¶hnÉ™nin Ã¼zÉ™rinÉ™ qurulmur).
+      # AÃ§arÄ± yaratmaq Ã¼Ã§Ã¼n "Create Keystore (bir dÉ™fÉ™)" workflow-unu iÅŸlÉ™t.
+      - name: Keystore hazÄ±rla (Secrets-dÉ™n)
         env:
           KS_B64: ${{ secrets.KERAMO_KEYSTORE_B64 }}
           KS_PASS: ${{ secrets.KERAMO_KEYSTORE_PASSWORD }}
         run: |
           if [ -z "$KS_B64" ]; then
-            echo "::error::KERAMO_KEYSTORE_B64 secret-i yoxdur. Əvvəlcə 'Create Keystore (bir dəfə)' workflow-unu işlət və 4 dəyəri Secrets-ə əlavə et."
+            echo "::error::KERAMO_KEYSTORE_B64 secret-i yoxdur. ÆvvÉ™lcÉ™ 'Create Keystore (bir dÉ™fÉ™)' workflow-unu iÅŸlÉ™t vÉ™ 4 dÉ™yÉ™ri Secrets-É™ É™lavÉ™ et."
             exit 1
           fi
-          # boşluq, sətir keçidi, dırnaq və təsadüfən kopyalanmış "KERAMO_KEYSTORE_B64:" yazısı təmizlənir
+          # boÅŸluq, sÉ™tir keÃ§idi, dÄ±rnaq vÉ™ tÉ™sadÃ¼fÉ™n kopyalanmÄ±ÅŸ "KERAMO_KEYSTORE_B64:" yazÄ±sÄ± tÉ™mizlÉ™nir
           printf '%s' "$KS_B64" | sed 's/^KERAMO_KEYSTORE_B64:*//' | tr -d ' \r\n\t"' | base64 -d > app/keramo.keystore || {
-            echo "::error::KERAMO_KEYSTORE_B64 dəyəri düzgün deyil (base64 oxunmur). Secret-i silib secrets.txt-dəki UZUN sətri tam kopyalayıb yenidən yarat."
+            echo "::error::KERAMO_KEYSTORE_B64 dÉ™yÉ™ri dÃ¼zgÃ¼n deyil (base64 oxunmur). Secret-i silib secrets.txt-dÉ™ki UZUN sÉ™tri tam kopyalayÄ±b yenidÉ™n yarat."
             exit 1
           }
-          # diaqnostika (dəyərlər yox, yalnız ölçülər göstərilir)
-          echo "Keystore ölçüsü: $(wc -c < app/keramo.keystore) bayt (Create Keystore ilə yaradılan açar üçün təxminən 2500-3000)"
-          echo "KERAMO_KEYSTORE_PASSWORD uzunluğu: ${#KS_PASS} (Create Keystore ilə yaradılan parol üçün 32)"
+          # diaqnostika (dÉ™yÉ™rlÉ™r yox, yalnÄ±z Ã¶lÃ§Ã¼lÉ™r gÃ¶stÉ™rilir)
+          echo "Keystore Ã¶lÃ§Ã¼sÃ¼: $(wc -c < app/keramo.keystore) bayt (Create Keystore ilÉ™ yaradÄ±lan aÃ§ar Ã¼Ã§Ã¼n tÉ™xminÉ™n 2500-3000)"
+          echo "KERAMO_KEYSTORE_PASSWORD uzunluÄŸu: ${#KS_PASS} (Create Keystore ilÉ™ yaradÄ±lan parol Ã¼Ã§Ã¼n 32)"
           CLEAN_PASS=$(printf '%s' "$KS_PASS" | tr -d ' \r\n\t"')
           if [ "$CLEAN_PASS" != "$KS_PASS" ]; then
-            echo "::error::KERAMO_KEYSTORE_PASSWORD içində boşluq, sətir keçidi və ya dırnaq var. Secret-i silib yalnız parolu (boşluqsuz) yenidən yarat."
+            echo "::error::KERAMO_KEYSTORE_PASSWORD iÃ§indÉ™ boÅŸluq, sÉ™tir keÃ§idi vÉ™ ya dÄ±rnaq var. Secret-i silib yalnÄ±z parolu (boÅŸluqsuz) yenidÉ™n yarat."
             exit 1
           fi
           if printf '%s' "$KS_PASS" | LC_ALL=C grep -q '[^ -~]'; then
-            echo "::error::KERAMO_KEYSTORE_PASSWORD içində ASCII olmayan (gizli) simvol var. Secret-i silib parolu secrets.txt-dən yenidən yapışdır."
+            echo "::error::KERAMO_KEYSTORE_PASSWORD iÃ§indÉ™ ASCII olmayan (gizli) simvol var. Secret-i silib parolu secrets.txt-dÉ™n yenidÉ™n yapÄ±ÅŸdÄ±r."
             exit 1
           fi
           if ! OUT=$(keytool -list -keystore app/keramo.keystore -storepass "$KS_PASS" 2>&1); then
-            echo "keytool cavabı: $OUT"
-            echo "::error::Keystore açılmadı. Ya KERAMO_KEYSTORE_PASSWORD bu açara aid deyil (başqa run-dan?), ya da KERAMO_KEYSTORE_B64 tam deyil (kəsilib)."
+            echo "keytool cavabÄ±: $OUT"
+            echo "::error::Keystore aÃ§Ä±lmadÄ±. Ya KERAMO_KEYSTORE_PASSWORD bu aÃ§ara aid deyil (baÅŸqa run-dan?), ya da KERAMO_KEYSTORE_B64 tam deyil (kÉ™silib)."
             exit 1
           fi
 
-      # ---------- AI MODELLƏRİ ----------
-      - name: DINOv2 + CLIP modellərini yüklə
+      # ---------- AI MODELLÆRÄ° ----------
+      - name: DINOv2 + CLIP modellÉ™rini yÃ¼klÉ™
         run: |
           mkdir -p app/src/main/assets/model
           curl -fL --retry 3 -o app/src/main/assets/model/model_quantized.onnx \
@@ -61,7 +61,7 @@ jobs:
             https://huggingface.co/Xenova/clip-vit-base-patch32/resolve/main/onnx/vision_model_quantized.onnx
 
       # ---------- ONNX RUNTIME WEB (WASM) ----------
-      - name: ONNX Runtime Web fayllarını yüklə
+      - name: ONNX Runtime Web fayllarÄ±nÄ± yÃ¼klÉ™
         run: |
           mkdir -p app/src/main/assets/ort
           npm install onnxruntime-web@1.18.0 --no-save
@@ -69,9 +69,9 @@ jobs:
           cp node_modules/onnxruntime-web/dist/ort-wasm.wasm app/src/main/assets/ort/
           cp node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm app/src/main/assets/ort/
 
-      # ---------- TESSERACT.JS + OCR (stiker oxumaq üçün, yalnız ingilis dili) ----------
-      # Core faylları tesseract.js-core paketindədir (CDN-dəki dist/ qovluğunda yoxdur).
-      - name: Tesseract.js və dil faylını yüklə
+      # ---------- TESSERACT.JS + OCR (stiker oxumaq Ã¼Ã§Ã¼n, yalnÄ±z ingilis dili) ----------
+      # Core fayllarÄ± tesseract.js-core paketindÉ™dir (CDN-dÉ™ki dist/ qovluÄŸunda yoxdur).
+      - name: Tesseract.js vÉ™ dil faylÄ±nÄ± yÃ¼klÉ™
         run: |
           mkdir -p app/src/main/assets/ocr
           npm install tesseract.js@5 --no-save
@@ -82,35 +82,35 @@ jobs:
             https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata
           ls -la app/src/main/assets/ocr
 
-      # ---------- LOQO İKONU ----------
-      - name: Loqo ikonu (secrets-də varsa)
+      # ---------- LOQO Ä°KONU ----------
+      - name: Loqo ikonu (secrets-dÉ™ varsa)
         run: |
           mkdir -p app/src/main/res/mipmap-xxxhdpi
           if [ -n "${{ secrets.KERAMO_ICON_URL }}" ]; then
             curl -fL --retry 3 -o app/src/main/res/mipmap-xxxhdpi/ic_launcher.png \
               "${{ secrets.KERAMO_ICON_URL }}"
           else
-            echo "::notice::KERAMO_ICON_URL yoxdur - mövcud ikon qalır."
+            echo "::notice::KERAMO_ICON_URL yoxdur - mÃ¶vcud ikon qalÄ±r."
           fi
 
       # ---------- GRADLE WRAPPER ----------
-      - name: Gradle quraşdır və wrapper yarat
+      - name: Gradle quraÅŸdÄ±r vÉ™ wrapper yarat
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.7"
 
-      - name: Wrapper jar yarat (əgər repo-da yoxdursa)
+      - name: Wrapper jar yarat (É™gÉ™r repo-da yoxdursa)
         run: |
           if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
             gradle wrapper --gradle-version 8.7
           fi
 
       # ---------- APK QUR ----------
-      - name: APK qur (versiya = run nömrəsi)
+      - name: APK qur (versiya = run nÃ¶mrÉ™si)
         env:
           KERAMO_STORE_PASSWORD: ${{ secrets.KERAMO_KEYSTORE_PASSWORD }}
-          # Create Keystore açarında açar parolu keystore parolu ilə eynidir.
-          # KERAMO_KEY_PASSWORD secret-ində gizli simvol olsa "Password is not ASCII" xətası verir, ona görə bunu istifadə etmirik.
+          # Create Keystore aÃ§arÄ±nda aÃ§ar parolu keystore parolu ilÉ™ eynidir.
+          # KERAMO_KEY_PASSWORD secret-indÉ™ gizli simvol olsa "Password is not ASCII" xÉ™tasÄ± verir, ona gÃ¶rÉ™ bunu istifadÉ™ etmirik.
           KERAMO_KEY_PASSWORD: ${{ secrets.KERAMO_KEYSTORE_PASSWORD }}
           KERAMO_KEY_ALIAS: keramo
         run: |
@@ -126,7 +126,7 @@ jobs:
           name: plite-tap-v${{ github.run_number }}
           path: app/build/outputs/apk/release/*.apk
 
-      - name: Uğursuzluqda hesabat
+      - name: UÄŸursuzluqda hesabat
         if: failure()
         uses: actions/upload-artifact@v4
         with:
