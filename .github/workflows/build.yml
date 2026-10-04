@@ -33,8 +33,17 @@ jobs:
             echo "::error::KERAMO_KEYSTORE_B64 dəyəri düzgün deyil (base64 oxunmur). Secret-i silib secrets.txt-dəki UZUN sətri tam kopyalayıb yenidən yarat."
             exit 1
           }
-          if ! keytool -list -keystore app/keramo.keystore -storepass "$KS_PASS" > /dev/null 2>&1; then
-            echo "::error::Keystore açılmadı. KERAMO_KEYSTORE_PASSWORD səhvdir və ya KERAMO_KEYSTORE_B64 tam deyil (kəsilib)."
+          # diaqnostika (dəyərlər yox, yalnız ölçülər göstərilir)
+          echo "Keystore ölçüsü: $(wc -c < app/keramo.keystore) bayt (Create Keystore ilə yaradılan açar üçün təxminən 2500-3000)"
+          echo "KERAMO_KEYSTORE_PASSWORD uzunluğu: ${#KS_PASS} (Create Keystore ilə yaradılan parol üçün 32)"
+          CLEAN_PASS=$(printf '%s' "$KS_PASS" | tr -d ' \r\n\t"')
+          if [ "$CLEAN_PASS" != "$KS_PASS" ]; then
+            echo "::error::KERAMO_KEYSTORE_PASSWORD içində boşluq, sətir keçidi və ya dırnaq var. Secret-i silib yalnız parolu (boşluqsuz) yenidən yarat."
+            exit 1
+          fi
+          if ! OUT=$(keytool -list -keystore app/keramo.keystore -storepass "$KS_PASS" 2>&1); then
+            echo "keytool cavabı: $OUT"
+            echo "::error::Keystore açılmadı. Ya KERAMO_KEYSTORE_PASSWORD bu açara aid deyil (başqa run-dan?), ya da KERAMO_KEYSTORE_B64 tam deyil (kəsilib)."
             exit 1
           fi
 
