@@ -1,0 +1,14 @@
+index.html (app/src/main/assets/index.html) — </body>-dən əvvəl, əsas <script>...</script> blokundan SONRA, BU SIRA ilə:
+
+<script src="plite-config.js"></script>
+<script src="ort-fix.js"></script>
+<script src="frame-fix.js"></script>
+<script src="speed-fix.js"></script>
+<script src="sticker-ocr.js"></script>
+<script src="smart-search.js"></script>
+<script src="auto-camera.js"></script>
+<script src="settings-panel.js"></script>
+<script src="label-shot.js"></script>
+
+plite-config.js ƏN ƏVVƏL, label-shot.js ƏN SONDA olmalıdır.
+ort-config.js sətri qalsa problem deyil (silmək məcburi deyil).
