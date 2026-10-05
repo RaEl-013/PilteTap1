@@ -17,7 +17,7 @@
   function $(id) { return document.getElementById(id); }
 
   /* ================= Ölçü köməkçiləri ================= */
-  var SIZE_LABEL = { '60x120': '60×120', '30x60': '60×30', '60x60': '60×60', '50x50': '50×50', '40x40': '40×40', '20x60': '60×20' };
+  var SIZE_LABEL = { '60x120': '120×60', '30x60': '60×30', '60x60': '60×60', '50x50': '50×50', '40x40': '40×40', '20x60': '60×20' };
   var SIZE_KEYS = ['60x120', '30x60', '60x60', '50x50', '40x40', '20x60'];
   function canon(s) {
     if (!s) return null;
@@ -179,35 +179,55 @@
     try { var v = localStorage.getItem('plite_sizeonly'); return v == null ? P('SIZE_ONLY_DEFAULT', true) !== false : v !== '0'; } catch (e) { return true; }
   }
 
-  var chipBtns = {};
+  var chipBtns = {}, chipRow = null, chipAll = null;
+  function paintChips() {
+    SIZE_KEYS.forEach(function (k) {
+      var b = chipBtns[k]; if (!b) return;
+      var on = selSizes.has(k);
+      b.style.background = on ? 'var(--acc)' : ''; b.style.color = on ? 'var(--acc-ink)' : '';
+    });
+    if (chipAll) {
+      var none = selSizes.size === 0;
+      chipAll.style.background = none ? 'var(--acc)' : ''; chipAll.style.color = none ? 'var(--acc-ink)' : '';
+    }
+  }
+  function addChip(k) {
+    if (!chipRow || chipBtns[k]) return;
+    var b = document.createElement('button');
+    b.className = 'btn alt'; b.textContent = prettySize(k);
+    b.style.cssText = 'width:auto;margin:0;padding:6px 10px;font-size:.85rem';
+    b.onclick = function () { if (selSizes.has(k)) selSizes.delete(k); else selSizes.add(k); saveSizes(); paintChips(); };
+    chipBtns[k] = b; chipRow.insertBefore(b, chipAll);
+  }
   (function buildChips() {
     var ft = $('ft'); if (!ft) return;
-    var row = document.createElement('div');
-    row.className = 'row'; row.style.cssText = 'margin-bottom:12px;gap:6px';
+    chipRow = document.createElement('div');
+    chipRow.className = 'row'; chipRow.style.cssText = 'margin-bottom:12px;gap:6px';
     var lb = document.createElement('span'); lb.className = 'msg'; lb.style.margin = '0'; lb.textContent = 'Ölçü:';
-    row.appendChild(lb);
-    SIZE_KEYS.forEach(function (k) {
-      var b = document.createElement('button');
-      b.className = 'btn alt'; b.textContent = SIZE_LABEL[k];
-      b.style.cssText = 'width:auto;margin:0;padding:6px 10px;font-size:.85rem';
-      b.onclick = function () { if (selSizes.has(k)) selSizes.delete(k); else selSizes.add(k); saveSizes(); paint(); };
-      chipBtns[k] = b; row.appendChild(b);
-    });
-    var all = document.createElement('button');
-    all.className = 'btn alt'; all.textContent = 'Hamısı';
-    all.style.cssText = 'width:auto;margin:0;padding:6px 10px;font-size:.85rem';
-    all.onclick = function () { selSizes.clear(); saveSizes(); paint(); };
-    chipBtns.all = all; row.appendChild(all);
-    ft.parentNode.parentNode.insertBefore(row, ft.parentNode.nextSibling);
-    function paint() {
-      SIZE_KEYS.forEach(function (k) {
-        var on = selSizes.has(k);
-        chipBtns[k].style.background = on ? 'var(--acc)' : ''; chipBtns[k].style.color = on ? 'var(--acc-ink)' : '';
-      });
-      var none = selSizes.size === 0;
-      all.style.background = none ? 'var(--acc)' : ''; all.style.color = none ? 'var(--acc-ink)' : '';
-    }
-    window.PLITE_PAINT_SIZES = paint; paint();
+    chipRow.appendChild(lb);
+    chipAll = document.createElement('button');
+    chipAll.className = 'btn alt'; chipAll.textContent = 'Hamısı';
+    chipAll.style.cssText = 'width:auto;margin:0;padding:6px 10px;font-size:.85rem';
+    chipAll.onclick = function () { selSizes.clear(); saveSizes(); paintChips(); };
+    chipRow.appendChild(chipAll);
+    SIZE_KEYS.slice().forEach(addChip);
+    ft.parentNode.parentNode.insertBefore(chipRow, ft.parentNode.nextSibling);
+    window.PLITE_PAINT_SIZES = paintChips; paintChips();
+  })();
+
+  // kataloqda rast gəlinən, standart siyahıda olmayan ölçüləri (məs. 80×80) də düymələrə və filtrə əlavə et
+  function registerSize(c) {
+    if (!c || SIZE_KEYS.indexOf(c) >= 0) return;
+    SIZE_KEYS.push(c); SIZE_LABEL[c] = c.split('x').reverse().join('×');
+    addChip(c);
+    if (fSel.size) { var o = document.createElement('option'); o.value = c; o.textContent = prettySize(c); fSel.size.insertBefore(o, fSel.size.lastChild); }
+    paintChips();
+  }
+
+  // kamerada ölçü siyahısında da 120×60 yazılsın
+  (function relabelCam() {
+    var sz = $('tsz'); if (!sz || !sz.options) return;
+    for (var i = 0; i < sz.options.length; i++) if (sz.options[i].value === '60x120') sz.options[i].textContent = '120×60 sm';
   })();
 
   // kamera: "Ölçü filtri" düyməsi (yalnız axtarış kamerasında görünür)
@@ -386,7 +406,9 @@
   }
   async function decorate(oa) {
     var q = ($('cq').value || '').trim().toLowerCase(), tf = $('cf').value;
-    var vis = (await oa()).filter(passCat).filter(function (it) { return (!tf || it.type === tf) && (!q || it.name.toLowerCase().includes(q)); });
+    var every = await oa();
+    every.forEach(function (it) { registerSize(canon(it.size)); });
+    var vis = every.filter(passCat).filter(function (it) { return (!tf || it.type === tf) && (!q || it.name.toLowerCase().includes(q)); });
     var cards = document.querySelectorAll('#list .it');
     if (cards.length !== vis.length) return;
     cards.forEach(function (card, i) {

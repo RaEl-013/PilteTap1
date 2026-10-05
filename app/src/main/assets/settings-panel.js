@@ -31,6 +31,7 @@
     { label: 'Ölçü filtri (kameradan axtarış)', opts: [['Açıq', { ls: ['plite_sizeonly', '1'] }], ['Bağlı', { ls: ['plite_sizeonly', '0'] }]],
       cur: function () { return lsGet('plite_sizeonly') === '0' ? 1 : (lsGet('plite_sizeonly') === '1' ? 0 : (P('SIZE_ONLY_DEFAULT', true) === false ? 1 : 0)); } },
     { label: 'Kataloqda etiket şəkli addımı', opts: bool('LABEL_PHASE') },
+    { label: 'Etiket ölçüsü (çərçivə)', opts: [['7×4 sm', { LABEL_CM_W: 7, LABEL_CM_H: 4 }], ['8×5 sm', { LABEL_CM_W: 8, LABEL_CM_H: 5 }], ['10×5 sm', { LABEL_CM_W: 10, LABEL_CM_H: 5 }], ['6×3 sm', { LABEL_CM_W: 6, LABEL_CM_H: 3 }]] },
     { label: 'Titrəmə', opts: bool('VIBRATE') }
   ];
 

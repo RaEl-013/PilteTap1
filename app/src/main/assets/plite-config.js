@@ -45,6 +45,10 @@ window.PLITE_CFG = {
   // Etiket (stiker)
   LABEL_PHASE: true,    // kataloq çəkilişində ayrıca etiket şəkli addımı
   LABEL_MAX_SIDE: 1600, // etiket şəklinin uzun tərəfi (px)
+  LABEL_CM_W: 7,        // etiketin real ölçüsü (sm): çərçivə bu nisbətdə olur (7×4 = 7:4)
+  LABEL_CM_H: 4,
+  LABEL_FRAME_FRAC: 0.85, // çərçivənin ekran enindəki payı
+  LABEL_PAD: 0.03,      // çəkilişdə çərçivənin ətrafına əlavə pay (kənar hərflər kəsilməsin)
   AMBIG_MARGIN: 7,      // axtarışda 1-ci və 2-ci nəticənin faiz fərqi bundan azdırsa -> "etiketi çək"
   MIN_CONF: 55,         // oxunmuş yazının minimal inamı (%)
   MAIN_RATIO: 0.7,      // əsas yazı = ən böyük yazının hündürlüyünün ən azı bu qədəri

@@ -29,11 +29,54 @@
 
   function forSearch() { return !!window.PLITE_LABEL_FOR_SEARCH; }
 
+  // ---- Etiket çərçivəsi: etiketin real ölçüsü (standart 7×4 sm -> nisbət 7:4) ----
+  var lf = document.createElement('div');
+  lf.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:3px solid #fff;border-radius:6px;box-sizing:border-box;box-shadow:0 0 0 9999px rgba(0,0,0,.55);pointer-events:none;display:none';
+  var lfl = document.createElement('div');
+  lfl.style.cssText = 'position:absolute;left:6px;top:4px;color:#fff;font-size:.75rem;font-weight:700;text-shadow:0 1px 3px #000';
+  lf.appendChild(lfl); wrap.appendChild(lf);
+  function labelDims() { return { w: P('LABEL_CM_W', 7), h: P('LABEL_CM_H', 4) }; }
+  function labelFrameRect(cw, ch) {
+    var d = labelDims(), ratio = d.w / d.h, frac = P('LABEL_FRAME_FRAC', 0.85);
+    var fw = cw * frac, fh = fw / ratio;
+    if (fh > ch * frac) { fh = ch * frac; fw = fh * ratio; }
+    return { w: fw, h: fh };
+  }
+  function placeLabelFrame() {
+    var cw = V.clientWidth, ch = V.clientHeight; if (!cw || !ch) return;
+    var f = labelFrameRect(cw, ch), d = labelDims();
+    lf.style.width = Math.round(f.w) + 'px'; lf.style.height = Math.round(f.h) + 'px';
+    lfl.textContent = 'Etiket ' + d.w + '×' + d.h + ' sm';
+  }
+
+  // ---- Çəkilişdən sonra nəticə paneli: oxundu / oxunmadı + yenidən çək ----
+  var reviewing = false, pending = null, pendingResult = null;
+  var rev = document.createElement('div');
+  rev.style.cssText = 'display:none;width:100%;max-width:420px;background:rgba(255,255,255,.1);border-radius:12px;padding:10px;color:#fff';
+  var rimg = new Image(); rimg.alt = '';
+  rimg.style.cssText = 'display:block;max-width:100%;max-height:120px;border-radius:8px;margin:0 auto 8px';
+  var rst = document.createElement('div'); rst.style.cssText = 'font-weight:700;margin-bottom:8px;line-height:1.4';
+  var rbtns = document.createElement('div'); rbtns.className = 'row';
+  function rbtn(text, primary) {
+    var b = document.createElement('button'); b.className = primary ? 'btn' : 'btn alt'; b.textContent = text;
+    b.style.cssText = 'width:auto;margin:0;padding:10px 14px;font-size:.95rem' + (primary ? '' : ';color:#fff;border-color:#fff');
+    return b;
+  }
+  var bOk = rbtn('✓ Təsdiq et', true), bRe = rbtn('↻ Yenidən çək', false), bSk = rbtn('Etiketsiz davam et', false);
+  rbtns.appendChild(bOk); rbtns.appendChild(bRe); rbtns.appendChild(bSk);
+  rev.appendChild(rimg); rev.appendChild(rst); rev.appendChild(rbtns);
+  wrap.parentNode.insertBefore(rev, wrap.nextSibling);
+
+  function showLive() {
+    reviewing = false; pending = null; pendingResult = null;
+    rev.style.display = 'none'; CS.hidden = false; skip.hidden = !window.PLITE_LABEL_PHASE;
+  }
+
   function hideOverlays() {
     saved = [];
     for (var i = 0; i < wrap.children.length; i++) {
       var c = wrap.children[i];
-      if (c !== V) { saved.push([c, c.style.display]); c.style.display = 'none'; }
+      if (c !== V && c !== lf) { saved.push([c, c.style.display]); c.style.display = 'none'; }
     }
   }
   function restoreOverlays() {
@@ -44,24 +87,29 @@
     CS.textContent = '🏷 Etiketi çək';
     CS.style.background = ''; CS.style.color = '';
     info.hidden = false;
+    var d = labelDims();
     info.textContent = forSearch()
-      ? 'Etiket: stikeri yaxından çək, ad oxunub axtarışı dəqiqləşdirəcək.'
-      : 'Etiket: stikeri (kod yazısını) yaxından çək. Düz, parıltısız, yazı ekranı doldursun.';
+      ? 'Etiket (' + d.w + '×' + d.h + ' sm): çərçivəyə sığdır, ad oxunub axtarışı dəqiqləşdirəcək.'
+      : 'Etiketi (' + d.w + '×' + d.h + ' sm) çərçivəyə sığdır: yazı oxunaqlı, düz və parıltısız olsun.';
     skip.textContent = forSearch() ? 'Ləğv et' : 'Etiketi keç';
     if (done) done.hidden = true;
+    if (!reviewing) placeLabelFrame();
   }
 
   function startLabelPhase() {
     window.PLITE_LABEL_PHASE = true;
     if (!forSearch()) { window.PLITE_LABEL_SHOT = null; window.PLITE_LABEL_RESULT = null; }
     hideOverlays();
-    skip.hidden = false;
+    lf.style.display = 'block';
+    showLive();
     ui();
   }
   function endLabelPhase() {
     if (!window.PLITE_LABEL_PHASE) return;
     window.PLITE_LABEL_PHASE = false;
     restoreOverlays();
+    lf.style.display = 'none';
+    showLive();
     skip.hidden = true;
     CS.textContent = 'Çək';
     var cat = typeof camMode !== 'undefined' && camMode === 'catalog';
@@ -69,37 +117,71 @@
     if (!CM.hidden && cat && typeof renderShots === 'function') renderShots();
   }
 
-  /* ---------- Etiket şəklini çək ---------- */
-  function grab() {
-    var vw = V.videoWidth, vh = V.videoHeight, sc = Math.min(1, MAXS / Math.max(vw, vh));
+  /* ---------- Etiket şəklini çək (yalnız çərçivənin içi) ---------- */
+  function grabCrop() {
+    var cw = V.clientWidth, ch = V.clientHeight, vw = V.videoWidth, vh = V.videoHeight, x = 0, y = 0, w = vw, h = vh;
+    if (cw && ch) {
+      var f = labelFrameRect(cw, ch), sx = vw / cw, sy = vh / ch, pad = P('LABEL_PAD', 0.03);
+      w = f.w * sx; h = f.h * sy; x = (vw - w) / 2; y = (vh - h) / 2;
+      var px = w * pad, py = h * pad;                 // kənarda kəsilmiş hərflər olmasın deyə kiçik pay
+      x = Math.max(0, x - px); y = Math.max(0, y - py);
+      w = Math.min(vw - x, w + 2 * px); h = Math.min(vh - y, h + 2 * py);
+    }
+    var sc = Math.min(1, MAXS / Math.max(w, h));
     var c = document.createElement('canvas');
-    c.width = Math.round(vw * sc); c.height = Math.round(vh * sc);
-    c.getContext('2d').drawImage(V, 0, 0, c.width, c.height);
+    c.width = Math.max(1, Math.round(w * sc)); c.height = Math.max(1, Math.round(h * sc));
+    c.getContext('2d').drawImage(V, x, y, w, h, 0, 0, c.width, c.height);
+    try { if (window.PLITE_POST) window.PLITE_POST(c); } catch (e) {} // çox qaranlıq/işıqlı etiketi düzəlt
     return c;
   }
+
+  async function startReview(c) {
+    reviewing = true; pending = c; pendingResult = null;
+    CS.hidden = true; skip.hidden = true;
+    rimg.src = c.toDataURL('image/jpeg', .7);
+    rst.textContent = '⏳ Etiket oxunur...';
+    bOk.style.display = 'none'; bRe.style.display = 'none'; bSk.style.display = 'none';
+    rev.style.display = 'block';
+    var r = null;
+    try { r = window.PLITE_PREOCR ? await window.PLITE_PREOCR(c) : null; } catch (e) {}
+    if (pending !== c) return;                         // arada yenidən çəkilib / bağlanıb
+    if (r && r.name) {
+      pendingResult = r;
+      rst.textContent = '✅ Etiket oxundu: ' + r.name;
+      bOk.style.display = ''; bRe.style.display = ''; bSk.style.display = 'none';
+    } else {
+      rst.textContent = '❌ Etiket oxunmadı. Etiketi çərçivəyə sığdır, düz və parıltısız çək.';
+      bOk.style.display = 'none'; bRe.style.display = ''; bSk.style.display = '';
+      bSk.textContent = forSearch() ? 'Ləğv et' : 'Etiketsiz davam et';
+    }
+  }
   function captureLabel() {
-    if (!V.videoWidth) return;
-    var c = grab();
-    try { if (navigator.vibrate) navigator.vibrate(60); } catch (e) {}
-    if (forSearch()) {                       // axtarışı dəqiqləşdirmə
+    if (!V.videoWidth || reviewing) return;
+    var c = grabCrop();
+    try { if (navigator.vibrate && P('VIBRATE', true) !== false) navigator.vibrate(60); } catch (e) {}
+    startReview(c);
+  }
+  bRe.onclick = function () { showLive(); };
+  bSk.onclick = function () {
+    showLive();
+    if (forSearch()) { window.PLITE_LABEL_FOR_SEARCH = false; endLabelPhase(); if (typeof closeCam === 'function') closeCam(); }
+    else endLabelPhase();
+  };
+  bOk.onclick = function () {
+    var c = pending, r = pendingResult;
+    showLive();
+    if (forSearch()) {                                 // axtarışı dəqiqləşdirmə
       window.PLITE_LABEL_FOR_SEARCH = false;
       endLabelPhase();
       if (typeof closeCam === 'function') closeCam();
       refineSearch(c);
       return;
     }
-    window.PLITE_LABEL_SHOT = c;             // kataloq üçün ad oxuma
+    window.PLITE_LABEL_SHOT = c;                       // kataloq üçün ad oxuma
+    window.PLITE_LABEL_RESULT = Promise.resolve(r);
     endLabelPhase();
-    if (ce) ce.textContent = 'Etiket oxunur...';
-    var p = null;
-    try { p = window.PLITE_PREOCR ? window.PLITE_PREOCR(c) : null; } catch (e) {}
-    window.PLITE_LABEL_RESULT = p;
-    if (p && p.then) {
-      p.then(function (r) {
-        if (ce && !CM.hidden) ce.textContent = r && r.name ? 'Etiketdən oxundu: ' + r.name : 'Etiket oxunmadı (ad əl ilə yazıla bilər).';
-      }, function () { if (ce && !CM.hidden) ce.textContent = 'Etiket oxunmadı (ad əl ilə yazıla bilər).'; });
-    } else if (ce) ce.textContent = '';
-  }
+    if (ce) ce.textContent = 'Etiket: ' + (r ? r.name : '');
+  };
 
   /* ---------- Ad müqayisəsi (OCR xətalarına dözümlü) ---------- */
   function norm(s) {
