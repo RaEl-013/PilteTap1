@@ -11,7 +11,7 @@
 
 (function () {
   var CFG = window.PLITE_CFG || {};
-  if (CFG.LABEL_PHASE === false) return;
+  var P = window.PLITE_P || function (k, d) { return d; };
   var MAXS = CFG.LABEL_MAX_SIDE || 1600;
   var AMBIG = CFG.AMBIG_MARGIN != null ? CFG.AMBIG_MARGIN : 7;
 
@@ -232,7 +232,7 @@
   if (typeof origOpen === 'function') {
     window.openCamFor = function (mode) {
       origOpen.apply(this, arguments);
-      if (mode === 'catalog' || forSearch()) startLabelPhase(); else endLabelPhase();
+      if ((mode === 'catalog' && P('LABEL_PHASE', true) !== false) || forSearch()) startLabelPhase(); else endLabelPhase();
     };
   }
 

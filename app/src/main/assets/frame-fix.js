@@ -30,7 +30,18 @@
   var STABLE = cfg('STABLE', 2);       // avto-çəkiliş üçün ardıcıl uğurlu yoxlama sayı (~0.6 san. hər biri)
   var COOLDOWN = cfg('COOLDOWN', 2500);  // ms: iki avto-çəkiliş arası minimum fasilə
 
-  function vib(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+  // Rejimə (kataloq/axtarış) və kataloqda şəklin sırasına görə parametrləri hər dəfə yenidən oxu (plite-config.js profilləri)
+  var D = { MIN_S: MIN_S, RANGE: RANGE, INSET: INSET, GLARE: GLARE, TILT_MAX: TILT_MAX, STABLE: STABLE, COOLDOWN: COOLDOWN };
+  function refreshParams() {
+    var P = window.PLITE_P; if (!P) return;
+    MIN_S = P('MIN_S', D.MIN_S); RANGE = P('RANGE', D.RANGE); INSET = P('INSET', D.INSET);
+    GLARE = P('GLARE', D.GLARE); TILT_MAX = P('TILT_MAX', D.TILT_MAX);
+    STABLE = P('STABLE', D.STABLE); COOLDOWN = P('COOLDOWN', D.COOLDOWN);
+  }
+
+  function vib(ms) {
+    try { if (window.PLITE_P && window.PLITE_P('VIBRATE', true) === false) return; if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+  }
   function ratio() { return typeof getRatio === 'function' ? getRatio() : 1; }
   function msg(t) { var ce = document.getElementById('ce'); if (ce) ce.textContent = t; }
 
@@ -38,7 +49,7 @@
   function key() { return 'plite_ori_' + SZ.value; }
   function getOri() { try { return localStorage.getItem(key()) || 'p'; } catch (e) { return 'p'; } }
   function setOri(v) { try { localStorage.setItem(key(), v); } catch (e) {} }
-  function getAuto() { try { var v = localStorage.getItem('plite_auto'); return v == null ? cfg('AUTO_DEFAULT', true) !== false : v !== '0'; } catch (e) { return true; } }
+  function getAuto() { try { var v = localStorage.getItem('plite_auto'); return v == null ? (window.PLITE_P ? window.PLITE_P('AUTO_DEFAULT', true) : cfg('AUTO_DEFAULT', true)) !== false : v !== '0'; } catch (e) { return true; } }
   function setAuto(on) { try { localStorage.setItem('plite_auto', on ? '1' : '0'); } catch (e) {} }
 
   function computeFrame(cw, ch, r, ori) {
@@ -138,7 +149,7 @@
   var armed = true, readyCount = 0, altCount = 0, lastShot = 0, prevOk = false;
 
   function setupTrack() {
-    armed = true; readyCount = 0; altCount = 0; lastShot = 0; prevOk = false; torchOn = false;
+    armed = true; readyCount = 0; altCount = 0; lastShot = 0; prevOk = false; torchOn = false; prevM = null;
     tb.style.background = ''; tb.style.color = '#fff';
     var t = track();
     if (!t || !t.getCapabilities) { tb.hidden = true; zr.hidden = true; return; }
@@ -166,6 +177,18 @@
     zl.textContent = '×' + (+zs.value).toFixed(1);
     try { t.applyConstraints({ advanced: [{ zoom: +zs.value }] }).catch(function () {}); } catch (e) {}
   };
+
+  /* ---------- Tərpənmə (iki yoxlama arası kadr fərqi) ---------- */
+  var mcv = document.createElement('canvas'); mcv.width = 32; mcv.height = 24;
+  var mctx = mcv.getContext('2d', { willReadFrequently: true }), prevM = null;
+  function motion() {
+    mctx.drawImage(V, 0, 0, 32, 24);
+    var d = mctx.getImageData(0, 0, 32, 24).data, g = new Float32Array(768), i, diff = 0;
+    for (i = 0; i < 768; i++) g[i] = .299 * d[i * 4] + .587 * d[i * 4 + 1] + .114 * d[i * 4 + 2];
+    if (prevM) { for (i = 0; i < 768; i++) diff += Math.abs(g[i] - prevM[i]); diff /= 768; }
+    prevM = g;
+    return diff;
+  }
 
   /* ---------- Kənar tapma ("maqnit") ---------- */
   var cvs = document.createElement('canvas'), ctx = cvs.getContext('2d', { willReadFrequently: true });
@@ -238,12 +261,15 @@
     var cm = document.getElementById('cm');
     if (!cm || cm.hidden || document.hidden) return;
     if (window.PLITE_LABEL_PHASE) return; // etiket şəkli çəkilərkən ramka/avto-çəkiliş işləmir
+    refreshParams();
     var s = snap(V); if (!s) return;
     var tl = tilt(); showLevel(tl);
 
     var warn = [];
     if (s.glare > GLARE) warn.push('parıltı var, bucağı dəyiş');
     if (tl != null && tl > TILT_MAX) warn.push('telefonu düz tut');
+    var mo = motion();
+    if (mo > (window.PLITE_P ? window.PLITE_P('MOTION_MAX', 10) : 10)) warn.push('tərpənmə var, sabit saxla');
 
     // avtomatik istiqamət: digər istiqamətdə düz oturursa dəyiş
     if (!s.ok && s.n < 4 && ratio() < 0.999) {
@@ -298,6 +324,7 @@
 
   function capture() {
     if (!V.videoWidth) return;
+    refreshParams();
     var vw = V.videoWidth, vh = V.videoHeight, c = null, s = null, rc = null;
     try { s = snap(V); } catch (e) {}
     if (s && s.ok) {
@@ -308,6 +335,7 @@
       rc = [(vw - cr.w) / 2, (vh - cr.h) / 2, cr.w, cr.h];
     }
     c = drawRect(V, rc[0], rc[1], rc[2], rc[3], 320);
+    try { if (window.PLITE_POST) window.PLITE_POST(c); } catch (e) {} // çox qaranlıq/işıqlı şəkli proqramla düzəlt
     vib(80);
     if (camMode === 'catalog') {
       // etiket (stiker) oxumaq üçün yüksək ayırdetməli nüsxə
