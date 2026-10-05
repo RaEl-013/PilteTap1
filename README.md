@@ -3,6 +3,12 @@
 Qovluq quruluşu repo ilə eynidir (PilteTap1/). Faylları eyni yerlərə at, köhnələrin üzərinə yaz.
 
 ## Bu versiyada YENİ
+- ETİKET ÇƏRÇİVƏSİ 7×4 sm (nisbət 7:4): etiketi çərçivəyə sığdır, şəkil yalnız çərçivənin içindən kəsilir (OCR daha dəqiq və tez).
+  Ölçü Ayarlar-da dəyişir (8×5, 10×5, 6×3) və ya plite-config.js: LABEL_CM_W / LABEL_CM_H.
+- Çəkilişdən sonra NƏTİCƏ PANELİ: "✅ Etiket oxundu: AD" (Təsdiq et / Yenidən çək) və ya "❌ Etiket oxunmadı" (Yenidən çək /
+  Etiketsiz davam et). Axtarışda etiket oxunmasa "Ləğv et". Təsdiq etmədən ad xanasına yazılmır.
+- ÖLÇÜ: "120×60" yazılışı (60×120 ilə eynidir), seçilmiş axtarış şəklinə görə seçilmiş ölçülərdə axtarış (çoxlu seçim),
+  kataloqda olan istənilən başqa ölçü (məs. 80×80) avtomatik düymə kimi əlavə olunur.
 - 90° çevrilmiş şəkil LƏĞV olundu. Kataloq çəkilişi 5 şəkildir: 1 düz · 2 yaxın · 3 uzaq · 4 yan bucaq · 5 zəif işıq.
 - AYARLAR (⚙) bölməsi: başlıqda 🌙 düyməsinin yanında. Şəkil sayı, maqnit və tərpənmə həssaslığı, avto işıq/fənər,
   kamera ayırdetməsi, tanıma dəqiqliyi, çalar/tekstura təsiri, ölçü filtri, etiket addımı, titrəmə. "Standartlara qayıt" var.
@@ -44,6 +50,7 @@ Create Keystore işlət -> secrets.txt -> yalnız 2 secret: KERAMO_KEYSTORE_B64,
 
 ## Bilinən məhdudiyyətlər
 - Kod telefonda tam sınaqdan keçməyib (məntiq simulyasiya ilə yoxlanıb). Xəta olsa ekran görüntüsü göndər.
+- Etiket çərçivəsi real santimetri bilmir, yalnız 7:4 nisbətini göstərir; etiketi çərçivənin eninə yaxın doldurmaq lazımdır.
 - Fənər, işıq (exposure), fokus nöqtəsi və ayırdetmə telefondan və WebView-dan asılıdır; dəstəklənməyən hissə sakitcə keçilir.
 - Çalar və tekstura kiçik cərimə kimi işləyir. 20 şəkillik kataloqda nəticəni cəmi 1 halda yaxşılaşdırdı; əsas ayırıcı etiketdir.
 - Avto-işıq ton fərqini (DARK/LIGHT) azalda bilər; ona görə yalnız ifrat qaranlıq/işıqda müdaxilə edir.
