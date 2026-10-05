@@ -1,54 +1,50 @@
-# PlitÉ™ tap â€” bÃ¼tÃ¼n dÉ™yiÅŸikliklÉ™r bir yerdÉ™
+# Plitə tap — bütün dəyişikliklər bir yerdə (son versiya)
 
-Qovluq quruluÅŸu repo ilÉ™ eynidir (PilteTap1/). FayllarÄ± eyni yerlÉ™rÉ™ at, kÃ¶hnÉ™lÉ™rin Ã¼zÉ™rinÉ™ yaz.
+Qovluq quruluşu repo ilə eynidir (PilteTap1/). Faylları eyni yerlərə at, köhnələrin üzərinə yaz.
 
-## Fayllar vÉ™ nÉ™ edir
-| Fayl | Hara | NÉ™ edir |
+## Bu versiyada YENİ
+- 90° çevrilmiş şəkil LƏĞV olundu. Kataloq çəkilişi 5 şəkildir: 1 düz · 2 yaxın · 3 uzaq · 4 yan bucaq · 5 zəif işıq.
+- AYARLAR (⚙) bölməsi: başlıqda 🌙 düyməsinin yanında. Şəkil sayı, maqnit və tərpənmə həssaslığı, avto işıq/fənər,
+  kamera ayırdetməsi, tanıma dəqiqliyi, çalar/tekstura təsiri, ölçü filtri, etiket addımı, titrəmə. "Standartlara qayıt" var.
+- Avto kamera (auto-camera.js): qaranlıqda işığı artırır, çatmasa fənəri (flash) yandırır; çox işıqlıda azaldır;
+  yan bucaqdan çəkəndə fokus mərkəzə. Kamera düzəldə bilmirsə, çox qaranlıq/işıqlı şəkli proqram düzəldir.
+- Ölçü filtri: Axtar-da ölçü düymələri; kameradan axtarışda seçilmiş ölçüdə axtarır; "Bütün ölçülərdə axtar" düyməsi.
+- Hər kafel avtomatik etiketlənir və saxlanır: rəng çaları, tekstura (düz/damarlı/naxışlı), ölçü, Kafel/Metlax.
+  Kataloqda çalar/ton/tekstura/ölçü filtrləri var. Köhnə şəkillər proqram açılanda avtomatik etiketlənir.
+- Çəkiliş və axtarış üçün AYRI parametr profilləri + kataloqda hər şəklin öz parametrləri (plite-config.js).
+- Yeni parametrlər: MOTION_MAX (tərpənmə nəzarəti), CAM_WIDTH/HEIGHT (kamera ayırdetməsi), VIBRATE.
+- Axtarış nəticəsində izah sətri düzəldildi (əvvəl HTML kod kimi görünə bilərdi).
+
+## Fayllar
+| Fayl | Hara | Nə edir |
 |---|---|---|
-| .github/workflows/build.yml | repo | Build APK. Sabit imza aÃ§arÄ± (Secrets), dÃ¼zgÃ¼n OCR fayllarÄ±, xÉ™ta olsa sÉ™bÉ™bi yazÄ±r |
-| .github/workflows/create-keystore.yml | repo | Ä°mza aÃ§arÄ±nÄ± BÄ°R DÆFÆ yaradÄ±r |
-| app/build.gradle.kts | repo | androidx.webkit É™lavÉ™ olunub (dÃ¼zgÃ¼n .kts sintaksisi) |
-| app/src/main/java/az/plite/tap/MainActivity.kt | repo | WebViewAssetLoader (wasm xÉ™tasÄ±nÄ±n hÉ™lli), ekran sÃ¶nmÉ™sin |
-| app/src/main/assets/plite-config.js | assets | BÃœTÃœN Ã§É™kiliÅŸ/tanÄ±ma parametrlÉ™ri bir yerdÉ™ |
-| .../assets/ort-fix.js | assets | ONNX wasm yolu + xÉ™ta olsa DIAG mÉ™lumatÄ± |
-| .../assets/frame-fix.js | assets | Ramka (Ã¶lÃ§Ã¼, ÅŸaquli/Ã¼fÃ¼qi), maqnit, avto-Ã§É™kiliÅŸ, parÄ±ltÄ±, sÉ™viyyÉ™, fÉ™nÉ™r, zoom, titrÉ™mÉ™ |
-| .../assets/speed-fix.js | assets | SÃ¼rÉ™tlÉ™ndirmÉ™ (az hesablama) |
-| .../assets/sticker-ocr.js | assets | StikerdÉ™n É™n bÃ¶yÃ¼k yazÄ±nÄ± (ad) oxuyur |
-| .../assets/label-shot.js | assets | AyrÄ±ca etiket ÅŸÉ™kli + axtarÄ±ÅŸÄ± etiketlÉ™ dÉ™qiqlÉ™ÅŸdirmÉ™ |
-
-## SilinmÉ™li kÃ¶hnÉ™ fayllar
-- .github/workflows/main.yml  (Build APK artÄ±q build.yml-dÉ™dir)
-- app/src/main/assets/ort-config.js vÉ™ index.html-dÉ™ki <script src="ort-config.js"></script> sÉ™tri
+| .github/workflows/build.yml | repo | Build APK (sabit imza açarı) |
+| .github/workflows/create-keystore.yml | repo | İmza açarını bir dəfə yaradır |
+| app/build.gradle.kts | repo | androidx.webkit |
+| app/src/main/java/az/plite/tap/MainActivity.kt | repo | WebViewAssetLoader, ekran sönməsin |
+| assets/plite-config.js | assets | BÜTÜN parametrlər, profillər, istifadəçi ayarı üstünlüyü |
+| assets/ort-fix.js | assets | ONNX wasm yolu, DIAG |
+| assets/frame-fix.js | assets | Ramka, maqnit, avto-çəkiliş, parıltı, səviyyə, tərpənmə, fənər, zoom |
+| assets/speed-fix.js | assets | Sürət; 90° göstərişini çıxarır; şəkil sayı dinamik |
+| assets/sticker-ocr.js | assets | Stikerdən ad oxuma |
+| assets/smart-search.js | assets | Çalar/tekstura/ölçü etiketləri, ölçü filtri, yeni axtarış, kataloq filtrləri |
+| assets/auto-camera.js | assets | Avto işıq/fənər/yan bucaq |
+| assets/settings-panel.js | assets | ⚙ Ayarlar |
+| assets/label-shot.js | assets | Ayrıca etiket şəkli, axtarışı etiketlə dəqiqləşdirmə |
 
 ## index.html
-index-html-skriptler.txt faylÄ±ndakÄ± 6 sÉ™tri gÃ¶stÉ™rilÉ™n sÄ±ra ilÉ™ É™lavÉ™ et.
+index-html-skriptler.txt-dəki 9 sətri göstərilən sıra ilə əlavə et.
 
-## Birinci dÉ™fÉ™ qurmaq (imza aÃ§arÄ±)
-1. Actions -> "Create Keystore (bir dÉ™fÉ™)" -> Run workflow (bir dÉ™fÉ™!).
-2. Run -> Artifacts -> keystore-secrets -> secrets.txt.
-3. Settings -> Secrets and variables -> Actions: yalnÄ±z bu 2 secret lazÄ±mdÄ±r (eyni secrets.txt-dÉ™n):
-   KERAMO_KEYSTORE_B64 (uzun sÉ™tir), KERAMO_KEYSTORE_PASSWORD (32 simvol).
-   Alias avtomatik "keramo"-dur, KERAMO_KEY_ALIAS / KERAMO_KEY_PASSWORD artÄ±q lazÄ±m deyil.
-4. Create Keystore run-unu sil. Sonra Actions -> Build APK -> Run workflow.
-5. Artifacts-dan APK-nÄ± endir. Ä°lk dÉ™fÉ™ kÃ¶hnÉ™ proqramÄ± SÄ°L, yenisini qur.
-   Bundan sonrakÄ± yenilÉ™mÉ™lÉ™r Ã¼stÃ¼ndÉ™n qurulur.
+## Parametr üstünlük sırası (avtomatik)
+Ayarlar (⚙) -> kataloqda şəklin öz sırası -> rejim profili (catalog / search) -> plite-config.js ümumi -> standart.
 
-## Kataloqu bÉ™rpa etmÉ™k
-Ãœnvan vÉ™ aÃ§ar dÉ™yiÅŸdiyi Ã¼Ã§Ã¼n kÃ¶hnÉ™ kataloq yeni proqramda gÃ¶rÃ¼nmÃ¼r.
-Kataloq -> "BÉ™rpa et" -> keramo-backup-2026-10-04.json faylÄ±nÄ± seÃ§.
+## İmza açarı (bir dəfəlik)
+Create Keystore işlət -> secrets.txt -> yalnız 2 secret: KERAMO_KEYSTORE_B64, KERAMO_KEYSTORE_PASSWORD.
+İlk dəfə köhnə proqramı sil, sonra hamısı üstündən qurulur. Kataloqu "Bərpa et" ilə geri yüklə.
 
-## Ä°stifadÉ™
-- Kataloq -> "Kamera ilÉ™ Ã§É™k": 1) etiket (stiker) ÅŸÉ™kli -> 2) kafel ÅŸÉ™killÉ™ri (3 É™dÉ™d, avto-Ã§É™kiliÅŸ) -> Bitir.
-  "Model adÄ±" etiketdÉ™n avtomatik dolur.
-- Axtar: nÉ™ticÉ™lÉ™rin Ã¼stÃ¼ndÉ™ "ðŸ· EtiketlÉ™ dÉ™qiqlÉ™ÅŸdir" (nÉ™ticÉ™lÉ™r yaxÄ±ndÄ±rsa xÉ™bÉ™rdarlÄ±q).
-- Ramka yaÅŸÄ±l yananda kafelin kÉ™narlarÄ± tapÄ±lÄ±b (maqnit), "Avto: aÃ§Ä±q" olanda Ã¶zÃ¼ Ã§É™kir.
-
-## TÉ™nzimlÉ™mÉ™
-BÃ¼tÃ¼n rÉ™qÉ™mlÉ™r plite-config.js-dÉ™dir (maqnit hÉ™ssaslÄ±ÄŸÄ±, avto-Ã§É™kiliÅŸ, sÃ¼rÉ™t/dÉ™qiqlik, etiket, xÉ™bÉ™rdarlÄ±q hÉ™ddi).
-Etiket addÄ±mÄ±nÄ± sÃ¶ndÃ¼rmÉ™k: LABEL_PHASE: false.
-
-## BilinÉ™n mÉ™hdudiyyÉ™tlÉ™r
-- Kod telefonda tam sÄ±naqdan keÃ§mÉ™yib; xÉ™ta olsa ekran gÃ¶rÃ¼ntÃ¼sÃ¼ / Actions xÉ™ta mÉ™tni gÃ¶ndÉ™r.
-- OCR yalnÄ±z ingilis hÉ™rflÉ™ri ilÉ™: "Ä°" -> "I". KiÃ§ik yazÄ± vÉ™ ya parÄ±ltÄ± oxumanÄ± pozur.
-- Maqnit kafelin kÉ™narÄ± gÃ¶rÃ¼nÉ™ndÉ™ iÅŸlÉ™yir (fuqa xÉ™tti vÉ™ ya fonla fÉ™rq).
-- TitrÉ™mÉ™ Ã¼Ã§Ã¼n lazÄ±m olsa AndroidManifest.xml-É™ VIBRATE icazÉ™si É™lavÉ™ et.
+## Bilinən məhdudiyyətlər
+- Kod telefonda tam sınaqdan keçməyib (məntiq simulyasiya ilə yoxlanıb). Xəta olsa ekran görüntüsü göndər.
+- Fənər, işıq (exposure), fokus nöqtəsi və ayırdetmə telefondan və WebView-dan asılıdır; dəstəklənməyən hissə sakitcə keçilir.
+- Çalar və tekstura kiçik cərimə kimi işləyir. 20 şəkillik kataloqda nəticəni cəmi 1 halda yaxşılaşdırdı; əsas ayırıcı etiketdir.
+- Avto-işıq ton fərqini (DARK/LIGHT) azalda bilər; ona görə yalnız ifrat qaranlıq/işıqda müdaxilə edir.
+- Titrəmə üçün lazım olsa AndroidManifest.xml-ə VIBRATE icazəsi əlavə et.
