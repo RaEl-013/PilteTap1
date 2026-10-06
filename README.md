@@ -3,6 +3,16 @@
 Qovluq quruluşu repo ilə eynidir (PilteTap1/). Faylları eyni yerlərə at, köhnələrin üzərinə yaz.
 
 ## Bu versiyada YENİ
+- index.html-də HEÇ NƏ əlavə etmək lazım deyil. MainActivity.kt səhifə yüklənəndən sonra bütün plite modullarını
+  (frame-fix, smart-search, label-shot ...) özü yükləyir. index.html-ə səhvən yapışdırılmış izah mətni ("index.html (app/src/main/...",
+  "BU SIRA ilə", "Silinməlidir" ...) ekranda göstərilmir. Yenə də onu index.html-dən silmək məsləhətdir.
+- Nəticədə şəklə toxun -> MÜQAYİSƏ: ekranda 2 şəkil (çəkdiyin + kataloqdakı), ‹ Əvvəlki / Növbəti ›, "Digər şəkli", "Düzgündür, əlavə et".
+  Nəticələr siyahısında çəkdiyin şəkil yuxarıda sabit qalır (sürüşdürəndə də görünür).
+- Kataloqa şəkil əlavə edəndə (Şəkilləri əlavə et) AD və ÖLÇÜ fayl adından götürülür:
+  "20X60 WOOD ASH MİX.jpg" -> ölçü 20×60, ad "WOOD ASH MİX"; "ad (2).jpg" -> eyni model.
+  WhatsApp/IMG kimi mənasız fayl adı olsa, etiketdən oxunur (OCR). Excel faylındakı F sütunu bu formatda fayl adları verir.
+- Nəticədə "DINO ... CLIP ... Rəng" izahı HTML kod kimi görünürdü, düzəldildi.
+- Ölçü axtarışı: 120×60, 60×60, 30×60, 30×30, 50×50, 40×40, 60×20 (çoxlu seçim); kameradan axtarışda kameradakı ölçü.
 - ETİKET ÇƏRÇİVƏSİ 7×4 sm (nisbət 7:4): etiketi çərçivəyə sığdır, şəkil yalnız çərçivənin içindən kəsilir (OCR daha dəqiq və tez).
   Ölçü Ayarlar-da dəyişir (8×5, 10×5, 6×3) və ya plite-config.js: LABEL_CM_W / LABEL_CM_H.
 - Çəkilişdən sonra NƏTİCƏ PANELİ: "✅ Etiket oxundu: AD" (Təsdiq et / Yenidən çək) və ya "❌ Etiket oxunmadı" (Yenidən çək /
@@ -39,7 +49,7 @@ Qovluq quruluşu repo ilə eynidir (PilteTap1/). Faylları eyni yerlərə at, k�
 | assets/label-shot.js | assets | Ayrıca etiket şəkli, axtarışı etiketlə dəqiqləşdirmə |
 
 ## index.html
-index-html-skriptler.txt-dəki 9 sətri göstərilən sıra ilə əlavə et.
+Dəyişiklik lazım deyil. Əvvəl yapışdırdığın izah mətni və <script> sətirləri varsa, silə bilərsən; qalsalar da zərəri yoxdur.
 
 ## Parametr üstünlük sırası (avtomatik)
 Ayarlar (⚙) -> kataloqda şəklin öz sırası -> rejim profili (catalog / search) -> plite-config.js ümumi -> standart.
