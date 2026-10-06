@@ -14,6 +14,7 @@
 // index.html-də dəyişiklik lazım deyil.
 
 (function () {
+  if (typeof window.render !== 'function') return; // əsas skript hələ yüklənməyib (yanlış yerə qoyulubsa heç nə etmir; proqram sonradan özü yükləyir)
   var SZ = document.getElementById('tsz');
   var FR = document.getElementById('fr');
   var CS = document.getElementById('cs');
@@ -354,4 +355,5 @@
   }
   CS.onclick = capture;
   var lv = document.getElementById('lv'); if (lv) lv.onclick = capture;
+  (window.PLITE_READY = window.PLITE_READY || {})['frame-fix'] = true;
 })();

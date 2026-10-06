@@ -13,12 +13,13 @@
 //     <script src="smart-search.js"></script>
 
 (function () {
+  if (typeof window.render !== 'function') return; // əsas skript hələ yüklənməyib (yanlış yerə qoyulubsa heç nə etmir; proqram sonradan özü yükləyir)
   var P = window.PLITE_P || function (k, d) { return d; };
   function $(id) { return document.getElementById(id); }
 
   /* ================= Ölçü köməkçiləri ================= */
-  var SIZE_LABEL = { '60x120': '120×60', '30x60': '60×30', '60x60': '60×60', '50x50': '50×50', '40x40': '40×40', '20x60': '60×20' };
-  var SIZE_KEYS = ['60x120', '30x60', '60x60', '50x50', '40x40', '20x60'];
+  var SIZE_LABEL = { '60x120': '120×60', '30x60': '60×30', '60x60': '60×60', '50x50': '50×50', '40x40': '40×40', '30x30': '30×30', '20x60': '60×20' };
+  var SIZE_KEYS = ['60x120', '30x60', '60x60', '50x50', '40x40', '30x30', '20x60'];
   function canon(s) {
     if (!s) return null;
     var m = String(s).toLowerCase().replace(/[×x]/g, 'x').split('x').map(Number).filter(Boolean);
@@ -227,7 +228,17 @@
   // kamerada ölçü siyahısında da 120×60 yazılsın
   (function relabelCam() {
     var sz = $('tsz'); if (!sz || !sz.options) return;
-    for (var i = 0; i < sz.options.length; i++) if (sz.options[i].value === '60x120') sz.options[i].textContent = '120×60 sm';
+    var has30 = false;
+    for (var i = 0; i < sz.options.length; i++) {
+      if (sz.options[i].value === '60x120') sz.options[i].textContent = '120×60 sm';
+      if (sz.options[i].value === '30x30') has30 = true;
+    }
+    if (!has30) {                                   // 30×30 kameradakı ölçü siyahısında yoxdur: əlavə et
+      try {
+        var o30 = document.createElement('option'); o30.value = '30x30'; o30.textContent = '30×30 sm';
+        (sz.querySelector('optgroup:last-child') || sz).appendChild(o30);
+      } catch (e) {}
+    }
   })();
 
   // kamera: "Ölçü filtri" düyməsi (yalnız axtarış kamerasında görünür)
@@ -327,6 +338,9 @@
         else { cur.n++; if (s > cur.s) { cur.it = it; cur.s = s; cur.d = bd; cur.c = bc; cur.o = bo; } }
       });
       var sc = Array.from(best.values()).sort(function (a, b) { return b.s - a.s; }).slice(0, 3);
+      var groups = {};
+      items.forEach(function (it) { var k = it.type + '|' + it.name; (groups[k] = groups[k] || []).push(it); });
+      var cmpData = { q: c.toDataURL('image/jpeg', .9), list: sc.map(function (r) { return { r: r, group: groups[r.it.type + '|' + r.it.name] || [r.it] }; }) };
       var info = best.size + ' model tapıldı';
       if (qT) info += ' · çalar: ' + qT.shade.name + ' (' + qT.shade.tone + ') · tekstura: ' + qT.tex.kind;
       if (sizes) info += ' · ölçü: ' + sizeLabels(sizes);
@@ -338,7 +352,7 @@
 
       sc.forEach(function (r, i) {
         var d = el('div', 'res' + (i === 0 ? ' top' : ''));
-        var im = new Image(); im.src = r.it.thumb; im.alt = r.it.name; im.style.cursor = 'pointer'; im.onclick = function () { openLightbox(r.it.thumb); };
+        var im = new Image(); im.src = r.it.thumb; im.alt = r.it.name; im.style.cursor = 'pointer'; im.onclick = function () { openCompare(cmpData, i); };
         var t = el('div'); t.appendChild(el('b', null, r.it.name));
         t.appendChild(el('span', 'tag', (r.it.type === 'kafel' ? 'Kafel' : 'Metlax') + ' · ' + r.n + ' şəkil'));
         t.insertAdjacentHTML('beforeend', whyHtml(r.d, r.c, r.o));
@@ -418,4 +432,117 @@
       card.appendChild(d);
     });
   }
+
+  /* ================= Müqayisə: ekranda 2 şəkil (sorğu + kataloq) ================= */
+  var styleEl = document.createElement('style');
+  styleEl.textContent =
+    '#out .q{position:sticky;top:0;z-index:3;background:var(--card);padding-bottom:8px}' +
+    '.pcmp{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.94);z-index:11;display:flex;flex-direction:column;padding:10px;gap:8px;color:#fff}' +
+    '.pcmp .panes{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px}' +
+    '@media (orientation:landscape){.pcmp .panes{flex-direction:row}}' +
+    '.pcmp .pane{flex:1;min-height:0;min-width:0;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,.07);border-radius:10px;padding:6px}' +
+    '.pcmp .pane img{flex:1;min-height:0;max-width:100%;object-fit:contain;border-radius:8px}' +
+    '.pcmp .cap{font-size:.8rem;font-weight:700;margin-bottom:4px;text-align:center;line-height:1.3}';
+  (document.head || document.body).appendChild(styleEl);
+
+  var cmp = null, cmpEls = {}, cmpState = { data: null, mi: 0, ii: 0 };
+  function cbtn(txt, primary) {
+    var b = document.createElement('button'); b.className = primary ? 'btn' : 'btn alt'; b.textContent = txt;
+    b.style.cssText = 'width:auto;margin:0;padding:10px 14px;font-size:.95rem' + (primary ? '' : ';color:#fff;border-color:#fff');
+    return b;
+  }
+  function pane(capKey, imgKey) {
+    var d = document.createElement('div'); d.className = 'pane';
+    var cap = document.createElement('div'); cap.className = 'cap';
+    var im = document.createElement('img'); im.alt = '';
+    d.appendChild(cap); d.appendChild(im); cmpEls[capKey] = cap; cmpEls[imgKey] = im; return d;
+  }
+  function buildCmp() {
+    cmp = document.createElement('div'); cmp.className = 'pcmp'; cmp.hidden = true;
+    var head = document.createElement('div'); head.className = 'row'; head.style.justifyContent = 'space-between';
+    cmpEls.title = document.createElement('b');
+    var close = cbtn('✕ Bağla'); close.onclick = function () { cmp.hidden = true; };
+    head.appendChild(cmpEls.title); head.appendChild(close);
+    var panes = document.createElement('div'); panes.className = 'panes';
+    panes.appendChild(pane('qcap', 'qimg')); panes.appendChild(pane('ccap', 'cimg'));
+    var act = document.createElement('div'); act.className = 'row'; act.style.justifyContent = 'center';
+    cmpEls.prev = cbtn('‹ Əvvəlki'); cmpEls.next = cbtn('Növbəti ›'); cmpEls.other = cbtn('Digər şəkli'); cmpEls.ok = cbtn('✓ Düzgündür, əlavə et', true);
+    cmpEls.prev.onclick = function () { if (cmpState.mi > 0) { cmpState.mi--; cmpState.ii = 0; paintCmp(); } };
+    cmpEls.next.onclick = function () { if (cmpState.mi < cmpState.data.list.length - 1) { cmpState.mi++; cmpState.ii = 0; paintCmp(); } };
+    cmpEls.other.onclick = function () { var g = cmpState.data.list[cmpState.mi].group; cmpState.ii = (cmpState.ii + 1) % g.length; paintCmp(); };
+    cmpEls.ok.onclick = function () {
+      var e = cmpState.data.list[cmpState.mi], it = e.group[Math.min(cmpState.ii, e.group.length - 1)];
+      if (typeof addQuery === 'function') addQuery(it.name, it.type, cmpEls.ok);
+    };
+    [cmpEls.prev, cmpEls.next, cmpEls.other, cmpEls.ok].forEach(function (b) { act.appendChild(b); });
+    cmp.appendChild(head); cmp.appendChild(panes); cmp.appendChild(act);
+    document.body.appendChild(cmp);
+  }
+  function paintCmp() {
+    var d = cmpState.data, e = d.list[cmpState.mi], g = e.group, it = g[Math.min(cmpState.ii, g.length - 1)];
+    cmpEls.title.textContent = 'Müqayisə ' + (cmpState.mi + 1) + '/' + d.list.length;
+    cmpEls.qcap.textContent = 'Çəkdiyin şəkil';
+    cmpEls.qimg.src = d.q;
+    var tl = tagLine(it);
+    cmpEls.ccap.textContent = it.name + ' · ' + (it.type === 'kafel' ? 'Kafel' : 'Metlax') + (tl ? ' · ' + tl : '') +
+      ' · ' + Math.round(e.r.s * 100) + '%' + (g.length > 1 ? ' · şəkil ' + (Math.min(cmpState.ii, g.length - 1) + 1) + '/' + g.length : '');
+    cmpEls.cimg.src = it.thumb;
+    cmpEls.prev.disabled = cmpState.mi === 0; cmpEls.next.disabled = cmpState.mi === d.list.length - 1;
+    cmpEls.other.hidden = g.length < 2;
+    cmpEls.ok.textContent = '✓ Düzgündür, əlavə et'; cmpEls.ok.disabled = false;
+  }
+  function openCompare(data, mi) {
+    if (!cmp) buildCmp();
+    cmpState.data = data; cmpState.mi = mi; cmpState.ii = 0;
+    paintCmp(); cmp.hidden = false;
+  }
+  window.PLITE_OPEN_COMPARE = openCompare;
+
+  /* ================= Kataloqa şəkil əlavə edəndə: ad və ölçü FAYL ADINDAN ================= */
+  // "20X60 WOOD ASH MİX.jpg"  ->  ölçü 20x60, ad "WOOD ASH MİX"
+  // "WOOD ASH MİX (2).jpg"    ->  eyni model (sonundakı (2) atılır)
+  // WhatsApp/IMG kimi mənasız adlar -> şəkildəki etiketdən oxunur (OCR), alınmasa fayl adı qalır
+  function parseFileName(fname) {
+    var base = String(fname || '').replace(/\.[^.\\\/]+$/, '');
+    var generic = /^(whatsapp|img|image|photo|pxl|dsc|screenshot|scan|foto|mmexport|signal|received|snapchat|vid|video)(?![a-z])/i.test(base) || /^[\d\s_\-\.()]+$/.test(base);
+    var s = base.replace(/_+/g, ' ').replace(/\s*\(\d+\)\s*$/, '').replace(/\s+-\s*copy.*$/i, '').replace(/\s+/g, ' ').trim();
+    var size = null, m = s.match(/(^|[\s\-])(\d{2,3})\s*[xX×]\s*(\d{2,3})(?=$|[\s\-])/);
+    if (m) {
+      size = canon(m[2] + 'x' + m[3]);
+      s = (s.slice(0, m.index) + ' ' + s.slice(m.index + m[0].length)).replace(/\s+/g, ' ').replace(/^[\s\-]+|[\s\-]+$/g, '');
+    }
+    return { name: s || base, size: size, generic: generic };
+  }
+  window.PLITE_PARSE_FILENAME = parseFileName;
+
+  window.addFiles = async function (list, input) {
+    var isImg = function (f) { return f.type === 'image/jpeg' || /\.jpe?g$/i.test(f.name); };
+    var files = Array.from(list).filter(isImg), base = $('nt').value, ok = 0, lastErr = '', ast = $('ast');
+    if (!files.length) { ast.textContent = 'JPEG şəkil tapılmadı. Yalnız .jpg / .jpeg fayllar qəbul olunur.'; input.value = ''; return; }
+    var useOcr = P('IMPORT_OCR_FALLBACK', true) !== false;
+    for (var i = 0; i < files.length; i++) {
+      ast.textContent = 'İşlənir: ' + (i + 1) + ' / ' + files.length;
+      var path = (files[i].webkitRelativePath || '').toLowerCase();
+      var type = /metlax|metlaq|metlakh/.test(path) ? 'metlax' : /kafel|kafe/.test(path) ? 'kafel' : base;
+      try {
+        var img = await load(files[i]), c = squareCanvas(img, 320);
+        var pf = parseFileName(files[i].name), name = pf.name;
+        if (pf.generic && useOcr && window.PLITE_PREOCR) {
+          ast.textContent = 'Etiket oxunur: ' + (i + 1) + ' / ' + files.length;
+          var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height, sc = Math.min(1, 1600 / Math.max(iw, ih));
+          var big = document.createElement('canvas'); big.width = Math.round(iw * sc); big.height = Math.round(ih * sc);
+          big.getContext('2d').drawImage(img, 0, 0, big.width, big.height);
+          var rr = await window.PLITE_PREOCR(big); if (rr && rr.name) name = rr.name;
+        }
+        var rec = { name: name, type: type, thumb: c.toDataURL('image/jpeg', .8), f: feat(c, 0), v2: await itemEmbs(c) };
+        if (pf.size) rec.size = pf.size;
+        await put(rec); ok++;
+      } catch (e) { lastErr = e.message; }
+      await new Promise(function (r) { setTimeout(r); });
+    }
+    ast.textContent = ok + ' şəkil əlavə olundu.' + (ok < files.length ? ' ' + (files.length - ok) + ' şəkil əlavə olunmadı.' : '') + (lastErr ? ' Xəta: ' + lastErr : '');
+    input.value = ''; render();
+  };
+
+  (window.PLITE_READY = window.PLITE_READY || {})['smart-search'] = true;
 })();

@@ -97,3 +97,5 @@ window.PLITE_P = function (k, d) {
   if (m && m[k] != null) return m[k];
   return c[k] != null ? c[k] : d;
 };
+
+(window.PLITE_READY = window.PLITE_READY || {})['plite-config'] = true;

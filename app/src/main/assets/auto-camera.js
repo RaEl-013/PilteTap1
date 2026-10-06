@@ -10,6 +10,7 @@
 //     <script src="auto-camera.js"></script>
 
 (function () {
+  if (typeof window.render !== 'function') return; // əsas skript hələ yüklənməyib (yanlış yerə qoyulubsa heç nə etmir; proqram sonradan özü yükləyir)
   var P = window.PLITE_P || function (k, d) { return d; };
   function $(id) { return document.getElementById(id); }
   var V = $('cv'), CM = $('cm'), FR = $('fr');
@@ -165,4 +166,5 @@
     g.putImageData(img, 0, 0);
     return { changed: true, mean: mean, gamma: gamma };
   };
+  (window.PLITE_READY = window.PLITE_READY || {})['auto-camera'] = true;
 })();

@@ -13,6 +13,7 @@
 //   ALL_ROT    true etsən axtarışda 4 çevirmə yenidən yoxlanılır (dəqiq, amma 4 dəfə yavaş).
 
 (function () {
+  if (typeof window.render !== 'function') return; // əsas skript hələ yüklənməyib (yanlış yerə qoyulubsa heç nə etmir; proqram sonradan özü yükləyir)
   // Hamısı hər dəfə yenidən oxunur (plite-config.js profilləri və proqramdakı Ayarlar)
   var P = window.PLITE_P || function (k, d) { return d; };
   function MAX_SHOTS() { return P('MAX_SHOTS', 5); }
@@ -72,4 +73,5 @@
     var mx = MAX_SHOTS();
     if (ci) ci.textContent = n >= mx ? n + ' şəkil tamam. Bitir bas.' : (n + 1) + '/' + mx + ': ' + (SHOT_HINTS[n] || '');
   };
+  (window.PLITE_READY = window.PLITE_READY || {})['speed-fix'] = true;
 })();

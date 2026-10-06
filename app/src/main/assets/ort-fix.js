@@ -10,6 +10,7 @@
 //  3) Build et, yeni APK-nı telefona qur.
 
 (function () {
+  if (typeof window.ensureOrt !== 'function') return; // əsas skript hələ yüklənməyib
   var FILES = ['ort/ort-wasm-simd-threaded.wasm', 'ort/ort-wasm-simd-threaded.mjs', 'ort/ort.wasm.min.js'];
   var chosen = '?';
 
@@ -101,4 +102,5 @@
     })();
     return clipP;
   };
+  (window.PLITE_READY = window.PLITE_READY || {})['ort-fix'] = true;
 })();

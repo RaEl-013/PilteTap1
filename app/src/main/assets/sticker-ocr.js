@@ -9,6 +9,7 @@
 //  3) frame-fix.js (v5) və main.yml (OCR addımı düzəlib) də yenilənməlidir.
 
 (function () {
+  if (typeof window.render !== 'function') return; // əsas skript hələ yüklənməyib (yanlış yerə qoyulubsa heç nə etmir; proqram sonradan özü yükləyir)
   var BASE = new URL('ocr', location.href).href;   // mütləq ünvan (worker üçün lazımdır)
   var CFG = window.PLITE_CFG || {};
   var MIN_CONF = CFG.MIN_CONF != null ? CFG.MIN_CONF : 55;      // oxunmuş yazının minimal inamı (%)
@@ -163,4 +164,5 @@
 
   // ilk şəkil üçün göstəriş
   try { if (typeof SHOT_HINTS !== 'undefined') SHOT_HINTS[0] = 'Stiker (kod yazısı) görünsün, düz qarşıdan çək'; } catch (e) {}
+  (window.PLITE_READY = window.PLITE_READY || {})['sticker-ocr'] = true;
 })();

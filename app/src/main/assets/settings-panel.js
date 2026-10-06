@@ -7,6 +7,7 @@
 //     <script src="settings-panel.js"></script>
 
 (function () {
+  if (typeof window.render !== 'function') return; // əsas skript hələ yüklənməyib (yanlış yerə qoyulubsa heç nə etmir; proqram sonradan özü yükləyir)
   function $(id) { return document.getElementById(id); }
   var P = window.PLITE_P || function (k, d) { return d; };
   var U = window.PLITE_USER = window.PLITE_USER || {};
@@ -101,4 +102,5 @@
   if (thm && thm.parentNode) thm.parentNode.insertBefore(btn, thm.nextSibling); else document.body.appendChild(btn);
   btn.onclick = function () { build(); modal.hidden = false; };
   modal.addEventListener('click', function (e) { if (e.target === modal) modal.hidden = true; });
+  (window.PLITE_READY = window.PLITE_READY || {})['settings-panel'] = true;
 })();

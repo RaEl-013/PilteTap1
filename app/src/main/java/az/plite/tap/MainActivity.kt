@@ -120,6 +120,13 @@ class MainActivity : AppCompatActivity() {
                 return false
             }
 
+            // Səhifə yüklənəndən sonra plite modullarını (frame-fix, smart-search və s.) özü yükləyir.
+            // index.html-ə skript sətirləri əlavə etmək lazım deyil; səhvən yapışdırılmış izah mətnini də silir.
+            override fun onPageFinished(view: WebView, url: String?) {
+                super.onPageFinished(view, url)
+                view.evaluateJavascript(LOADER_JS, null)
+            }
+
             override fun shouldInterceptRequest(
                 view: WebView,
                 request: WebResourceRequest
@@ -203,3 +210,29 @@ class MainActivity : AppCompatActivity() {
         if (this::web.isInitialized && web.canGoBack()) web.goBack() else super.onBackPressed()
     }
 }
+
+private const val LOADER_JS = """
+(function () {
+  if (window.__plite_loader) return;
+  if (typeof window.render !== 'function') return;
+  window.__plite_loader = 1;
+  try {
+    var w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false), n, rm = [];
+    while ((n = w.nextNode())) {
+      var t = n.nodeValue || '';
+      if (/index\.html \(app\/src\/main\/assets\/index\.html\)|BU SIRA ilə|Silinməlidir|ort-config\.js faylı|ort-config\.js sətri|-dən əvvəl, əsas|blokundan SONRA|ƏN ƏVVƏL, label-shot|index-html-skriptler/.test(t)) rm.push(n);
+    }
+    rm.forEach(function (x) { if (x.parentNode) x.parentNode.removeChild(x); });
+  } catch (e) {}
+  var L = ['plite-config', 'ort-fix', 'frame-fix', 'speed-fix', 'sticker-ocr', 'smart-search', 'auto-camera', 'settings-panel', 'label-shot'];
+  (function next(i) {
+    if (i >= L.length) return;
+    var R = window.PLITE_READY || {};
+    if (R[L[i]]) { next(i + 1); return; }
+    var s = document.createElement('script');
+    s.src = L[i] + '.js';
+    s.onload = s.onerror = function () { next(i + 1); };
+    document.body.appendChild(s);
+  })(0);
+})();
+"""
